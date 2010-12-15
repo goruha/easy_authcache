@@ -1,0 +1,85 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * File provide code for installation easy authcache block module
+ *
+ */
+
+
+/**
+ * Implementation of hook_schema().
+ */
+
+function easy_authcache_block_schema() {
+  $schema = array();
+
+  $schema['easy_authcache_blocks'] = array(
+    'fields' => array(
+      'rid' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: record ID.',
+      ),
+      'module' => array(
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => "The module from which the block originates; for example, 'user' for the Who's Online block, and 'block' for any custom blocks.",
+      ),
+      'delta' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '0',
+        'description' => 'Unique ID for block within a module.',
+      ),
+      'block_id' => array(
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Unique ID for block and delta within a module.',
+      ),
+
+      'use_ajax' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'just_run' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('rid'),
+    'unique keys' => array(
+      'md' => array('module', 'delta'),
+    ),
+    'indexes' => array(
+      'module' => array('module'),
+      'delta' => array('delta'),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implementation hook_install()
+ */
+function easy_authcache_block_install() {
+  drupal_install_schema('easy_authcache_block');
+}
+
+/**
+ * Implementation hook_uninstall()
+ */
+function easy_authcache_block_uninstall() {
+  drupal_uninstall_schema('easy_authcache_block');
+}

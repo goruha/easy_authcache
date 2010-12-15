@@ -1,0 +1,139 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * File provide implementation of easy authcache api for drupal views module
+ */
+
+define('EASY_AUTHCACHE_VIEWS_ID', 'easy_authcache_views');
+
+/**
+ * Implementation hook_easy_authcache_config()
+ * @return array
+ */
+function easy_authcache_views_easy_authcache_config() {
+  $items = array();
+
+  $items['views'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Views configuration'),
+    '#description' => t('Default easy authcache views configuration'),
+    '#collapsible' => TRUE,
+  );
+
+  $views_list = array();
+  $views = views_get_all_views();
+  foreach ($views as $view) {
+    foreach ($view->display as $display) {
+      $views_list[$view->name .'|'. $display->id] = $view->name .' - '. $display->display_title;
+    }
+  }
+
+  $items['views']['easy_authcache_views'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Views'),
+    '#description' => t('Select views that will be getted with ajax'),
+    '#default_value' => variable_get('easy_authcache_views', array()),
+    '#options' => $views_list,
+  );
+
+  return $items;
+}
+
+
+/**
+ * Implement hook_theme_registry_alter
+ *
+ * @param array $theme_registry
+ */
+function easy_authcache_views_theme_registry_alter(&$theme_registry) {
+  $functions = array();
+  $views = array();
+  
+  // get array view => array(display);
+  $temp = array_filter(variable_get('easy_authcache_views', array()));
+  foreach ($temp as $value) {
+    $parts = explode('|', $value);
+    $views[$parts[0]][] = $parts[1];
+  }
+
+  foreach ($views as $view_name => $displays) {
+    // Load view
+    $view = views_get_view($view_name);
+
+    foreach ($displays as $display) {
+      // set active display
+      $view->set_display($display);
+      // get theme functions candidates
+      $function = $view->display_handler->theme_functions();
+      // Get actual theme function
+      if (is_array($function)) {
+        foreach ($function as $candidate) {
+          if (isset($theme_registry[$candidate])) {
+            break;
+          }
+        }
+        $function = $candidate;
+      }
+
+      // Override theme
+      if (!isset($functions[$function])) {
+        $functions[] = $function;
+        easy_authcache_override_theme($theme_registry, $function, 'easy_authcache_views_dynamic_load');
+      }      
+    }
+  }
+}
+
+/**
+ *
+ * Callback for overriden theme
+ *
+ * @param  $vars
+ * @return void
+ */
+function easy_authcache_views_dynamic_load(&$vars) {
+  global $is_page_authcache;
+  if ($is_page_authcache) {
+        $view = $vars['name'];
+        $display = $vars['display_id'];
+        $args = $vars['view']->args;
+        $selector = easy_authcache_get_selector('views-'. $view .'-'. $display .'-'. implode('-', $args));
+        $params = array(
+          'view' => $view,
+          'display' => $display,
+          'args' => $args,
+        );
+        easy_authcache_apply_dynamic_theme(EASY_AUTHCACHE_VIEWS_ID, $vars, $selector, $params);
+  }
+}
+
+/**
+ *
+ * Implementation hook_authcache_cached()
+ *
+ * @param  $data
+ * @return array
+ */
+function easy_authcache_views_authcache_cached($data) {
+  $return = array();
+  foreach ($data as $widget) {
+    $view = $widget->params->view;
+    $display = $widget->params->display;
+    $args = (array) $widget->params->args;
+    $params = array($view, $display);
+    foreach ($args as $arg) {
+      $params[] = $arg;
+    }
+    $html = call_user_func_array('views_embed_view', $params);
+    if (!empty($html)) {
+      $return[] = array(
+          'selector' => $widget->selector,
+          'output' => $html,
+          'type' => 'div',
+      );
+    }
+  }
+  return $return;
+}

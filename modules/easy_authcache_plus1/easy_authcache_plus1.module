@@ -1,0 +1,69 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * File provide implementation of easy authcache api for drupal plus1 module
+ */
+
+define('EASY_AUTHCACHE_PLUS1_ID', 'easy_authcache_plus1');
+define('EASY_AUTHCACHE_PLUS1_THEME', 'plus1_widget');
+
+
+/**
+ * Implement hook_theme_registry_alter
+ *
+ * @param array $theme_registry
+ */
+function easy_authcache_plus1_theme_registry_alter(&$theme_registry) {
+  easy_authcache_override_theme($theme_registry, EASY_AUTHCACHE_PLUS1_THEME, 'easy_authcache_plus1_dynamic_load');
+}
+
+/**
+ *
+ * Callback for overriden theme
+ *
+ * @param  $vars
+ * @return void
+ */
+function easy_authcache_plus1_dynamic_load(&$vars) {
+  global $is_page_authcache;
+  if ($is_page_authcache) {
+      $node = $vars[0];
+      $teaser = $vars[5];
+      $page = $vars[6];
+      $selector = easy_authcache_get_selector('plus1-'. $node->nid);
+      $params = array(
+        'nid' => $node->nid,
+        'teaser' => $teaser,
+        'page' => $page,
+      );
+      easy_authcache_apply_dynamic_theme(EASY_AUTHCACHE_PLUS1_ID, $vars, $selector, $params);
+  }
+  else {
+    easy_authcache_run_default_theme_function($vars, EASY_AUTHCACHE_PLUS1_THEME);
+  }
+}
+
+/**
+ *
+ * Implementation hook_authcache_cached()
+ *
+ * @param  $data
+ * @return array
+ */
+function easy_authcache_plus1_authcache_cached($data) {
+  $return = array();
+  foreach ($data as $widget) {
+    $node = node_load($widget->params->nid);
+    $teaser = $widget->params->teaser;
+    $page = $widget->params->page;
+    $html = plus1_jquery_widget($node, $teaser, $page);
+    $return[] = array(
+      'selector' => $widget->selector,
+      'output' => $html,
+      'type' => 'div',
+    );
+  }
+  return $return;
+}

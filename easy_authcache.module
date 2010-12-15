@@ -1,0 +1,230 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Authcache and dynamic content integration
+ */
+
+define('EASY_AUTHCACHE_CALLBACK_FILE', 'authcache.ajax.inc');
+define('EASY_AUTHCACHE_CALLBACK_HOOK', 'authcache_cached');
+
+
+/**
+ *  Helper function to override theme funtion with callback
+ *
+ * @param array $theme_registry
+ * @param string $theme_name theming name
+ * @param string $callback valid function callback
+ */
+function easy_authcache_override_theme(&$theme_registry, $theme_name, $callback) {
+    // Add callback as the last preprocess function for theme
+    _add_theme_registry_last($theme_registry, $theme_name, $callback);
+    if (isset($theme_registry[$theme_name]['function']) && !empty($theme_registry[$theme_name]['function'])) {
+        // save function callback in theme registry
+        $theme_registry[$theme_name]['authcache_function'] = $theme_registry[$theme_name]['function'];
+        // do not use function for theming
+        unset($theme_registry[$theme_name]['function']);
+    }
+    // Add easy authcache template dir to search templates in
+    $theme_registry[$theme_name]['theme paths'][] = drupal_get_path('module', 'easy_authcache') . '/theme';
+}
+
+/**
+ * Apply getting with ajax to current theming function
+ *
+ * @param string $module module name that provide ajax callback
+ * @param array $vars vars passed to theme function
+ * @param string $selector selector for dom element
+ * @param array $params params will be added to js and send with ajax
+ * @param bool $save_html show default theming html
+ */
+function easy_authcache_apply_dynamic_theme($module, &$vars, $selector, $params, $save_html = FALSE) {
+    easy_authcache_apply_dynamic($module, $selector, $params);
+    $vars['selector'] = $selector;
+    if (!$save_html) {
+        $vars['template_files'] = array('block-cache');
+    }
+}
+
+/**
+ * Function adds all js nessasery for ajax
+ * @param sting $module module name that will handle ajax callback
+ * @param string $selector selector that will used to find dom element that will be replaced with ajax result
+ * @param array $params params will be send with ajax and passed to ajax callback function
+ * @return void
+ */
+function easy_authcache_apply_dynamic($module, $selector, $params) {
+    static $variables_added = FALSE;
+    $params = array();
+    $params['easy_authcache'] = array();
+    $params['easy_authcache']['items'] = array();
+    $params['easy_authcache']['items'][] = array(
+        'id' => $module,
+        'data' => array(
+            'params' => $params,
+            'selector' => ".$selector",
+        )
+    );
+    drupal_add_js($params, 'setting');
+
+    if (!$variables_added) {
+        $variables = array();
+        $variables['easy_authcache']['single_request'] = variable_get('easy_authcache_single_request', TRUE);
+        $max_age = variable_get('easy_authcache_max_age', 3600);
+        if (is_numeric($max_age)) {
+            $variables['easy_authcache']['max_age'] = $max_age;
+        }
+        drupal_add_js($variables, 'setting');
+        drupal_add_js(drupal_get_path('module', 'easy_authcache') . '/js/easy_authcache.js', 'module', 'header');
+        $variables_added = TRUE;
+    }
+}
+
+
+/**
+ * Function returns selector to prevent using other modules selectors
+ * @param string $cache_id unique id for cache html
+ * @return string selector
+ */
+function easy_authcache_get_selector($cache_id) {
+    return 'dynamic-region-' . $cache_id;
+}
+
+/**
+ * Function that runs default theme function.
+ * Use this function on callback for overrided theme, if that theme is function based. *
+ *
+ * @param array $vars vars will be passed to theme function
+ * @param sting $theme_name theming name
+ * 
+ */
+function easy_authcache_run_default_theme_function(&$vars, $theme_name) {
+    $vars['template_files'] = array('block-cache-function');
+    $hooks = theme_get_registry();
+    if (isset($hooks[$theme_name]['authcache_function']) && !empty($hooks[$theme_name]['authcache_function'])) {
+        $function = $hooks[$theme_name]['authcache_function'];
+        $params = array();
+        foreach ($hooks[$theme_name]['arguments'] as $key => $value) {
+            $params[$key] = isset($vars[$key]) ? $vars[$key] : $value;
+        }
+        $vars['output'] = call_user_func_array($function, $params);
+    }
+}
+
+
+/**
+ *  Implementation hook_theme_registry_alter()
+ */
+function easy_authcache_theme_registry_alter(&$theme_registry) {
+    // Add easy_authcache_store_js_files as the last preprocess function for page theme
+    _add_theme_registry_last($theme_registry, 'page', 'easy_authcache_store_js_files');
+}
+
+/**
+ *  Implementation hook_theme()
+ */
+function easy_authcache_theme() {
+    $theme_path = drupal_get_path('module', 'easy_authcache') . '/theme';
+    return array(
+        'easy_authcache_dynamic_region' => array(
+            'arguments' => array('selector' => NULL),
+            'template' => 'block-cache',
+            'path' => $theme_path
+        )
+    );
+}
+
+/**
+ *  Implementation hook_easy_authcache_config()
+ */
+function easy_authcache_easy_authcache_config() {
+    $items = array();
+
+    $items['default'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Default configuration'),
+        '#description' => t('Default easy authcache configuration'),
+    );
+
+    $items['default']['easy_authcache_single_request'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Use single ajax request'),
+        '#description' => t('If selected plugins will be getted with single ajax, else each plugin will send own ajax request'),
+        '#return_value' => TRUE,
+        '#default_value' => variable_get('easy_authcache_single_request', TRUE),
+    );
+
+    $items['default']['easy_authcache_max_age'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Max ajax age'),
+        '#default_value' => variable_get('easy_authcache_max_age', 3600),
+    );
+
+    return $items;
+}
+
+/**
+ * Function that handle authcache ajax callback and call easy authcache ajax callbacks for each theme function
+ * @param array $data params for all dynamic regions retriving with ajax
+ * @return string JSON result array
+ */
+function _easy_authcache_process($data) {
+    $output = array();
+    // TODO: Remake js JSON converter to remove <br> html.
+    $data = str_replace('<br>', '', $data);
+    $data = json_decode($data);
+    foreach ($data as $module => $params) {
+        if (module_hook($module, EASY_AUTHCACHE_CALLBACK_HOOK)) {
+            $output = array_merge($output, module_invoke($module, EASY_AUTHCACHE_CALLBACK_HOOK, $params));
+        }
+    }
+    $result = array();
+    $result['items'] = $output;
+    $result['js'] = drupal_add_js(NULL, NULL, NULL);
+    return json_encode($result);
+}
+
+/**
+ *  Helper function that set 
+ * @param  $theme_registry
+ * @param  $theme_name
+ * @param  $function_name
+ * @return void
+ */
+function _add_theme_registry_last(&$theme_registry, $theme_name, $function_name) {
+    if (isset($theme_registry[$theme_name])) {
+        // If cigale_cache_preprocess_page's preprocess function is there already, remove it.
+        if ($key = array_search($function_name, $theme_registry[$theme_name]['preprocess functions'])) {
+            unset($theme_registry[$theme_name]['preprocess functions'][$key]);
+        }
+        // Now tack it on at the end so it runs after everything else.
+        $theme_registry[$theme_name]['preprocess functions'][] = $function_name;
+    }
+}
+
+/**
+ *
+ * Store list of js files in drupal js settings
+ * to make ajax add js faster and undependend of js aggregation
+ *
+ * @global bool $is_page_authcache flag if current page is for caching
+ * @param array $vars variables for page template
+ */
+function easy_authcache_store_js_files(&$vars) {
+    $result = array();
+    $js = drupal_add_js(NULL, NULL, NULL);
+    foreach ($js as $section) {
+        foreach ($section as $key => $items) {
+            if ($key != 'inline' && $key != 'setting') {
+                foreach ($items as $file_name => $variable) {
+                    $result[] = $file_name;
+                }
+            }
+        }
+        ;
+    }
+    $result = array_unique($result);
+    drupal_add_js(array('easy_authcache_js' => $result), 'setting');
+    $vars['scripts'] = drupal_get_js();
+}

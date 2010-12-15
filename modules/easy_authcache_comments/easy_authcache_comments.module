@@ -1,0 +1,71 @@
+<?php
+// $Id$
+
+define('EASY_AUTHCACHE_COMMENTS_ID', 'easy_authcache_comments');
+
+
+/**
+ * @file
+ * 
+ * File provide implementation of easy authcache api for drupal comments
+ *
+ */
+
+
+/**
+ *
+ * Implement hook_theme_registry_alter
+ *
+ * @param array $theme_registry
+ */
+function easy_authcache_comments_theme_registry_alter(&$theme_registry) {
+  easy_authcache_override_theme($theme_registry, 'comment_wrapper', 'easy_authcache_comments_dynamic_load');
+}
+
+/**
+ *
+ * Call back for theme fucntion
+ *
+ * @global bool $is_page_authcache if page is going to be cached
+ * @param array $vars variabels passing to the theme function
+ */
+function easy_authcache_comments_dynamic_load(&$vars) {
+  global $is_page_authcache;
+  if ($is_page_authcache) {
+      $node = $vars['node'];
+      // Create unique selector
+      $selector = easy_authcache_get_selector('comments-'. $node->nid);
+      // Prepare parameters passed to ajax callback function
+      $params = array('nid' => $node->nid);
+      // Apply dynamic theme. Override template path. Add nessasery js data and js easy_authcache.js
+      easy_authcache_apply_dynamic_theme(EASY_AUTHCACHE_COMMENTS_ID, $vars, $selector, $params);
+  }
+}
+
+/**
+ *
+ * Easy authcache ajax callback
+ * 
+ * @param array $data array of comments we need, array(selector, params);
+ * @return array results
+ */
+function easy_authcache_comments_authcache_cached($data) {
+  $return = array();
+  // for each dynamic comments region
+  foreach ($data as $widget) {
+    // Load node to get comments to
+    $node = node_load($widget->params->nid);
+    // Render comments
+    $output = comment_render($node);
+    // Adding element to result array
+    $return[] = array(
+      // selector to dom mock object
+      'selector' => $widget->selector,
+      // html that will be replaced with
+      'output' => $output,
+      // Type html = insert as dom html struct, apply behaviours
+      'type' => 'div',
+    );
+  }
+  return $return;
+}
