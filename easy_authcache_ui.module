@@ -1,0 +1,26 @@
+<?php
+// $Id$
+/**
+ * @file
+ * Authcache and dynamic content integration
+ */
+
+/**
+ * Implementation of hook_menu()
+ */
+function easy_authcache_ui_menu() {
+  $items = array();
+
+  $items['admin/settings/performance/authcache/easyauthcache'] = array(
+    'title' => 'Easy Authcache settings',
+    'description' => "Configure easy authcache settings.",
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('easy_authcache_ui_admin_form'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'easy_authcache_ui.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 30,
+  );
+
+  return $items;
+}

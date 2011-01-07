@@ -1,0 +1,6 @@
+; $Id$
+name = Easy Authcache
+description = Provide API for easy authcache implemantation
+dependencies[] = authcache
+package = Caching
+core = "6.x"

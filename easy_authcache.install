@@ -1,0 +1,24 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * File provide code for installation easy authcache module
+ *
+ */
+
+/**
+ * Implementation hook_install()
+ */
+function easy_authcache_install() {
+    variable_set('easy_authcache_single_request', TRUE);
+    variable_set('easy_authcache_max_age', 3600);
+}
+
+/**
+ * Implementation hook_uninstall()
+ */
+function easy_authcache_uninstall() {
+    variable_del('easy_authcache_single_request');
+    variable_del('easy_authcache_max_age');
+}
