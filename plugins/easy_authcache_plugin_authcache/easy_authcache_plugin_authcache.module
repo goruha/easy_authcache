@@ -24,3 +24,28 @@ function easy_authcache_plugin_authcache_easy_authcache_plugin_use_replace() {
   global $is_page_authcache;
   return $is_page_authcache;
 }
+
+function easy_authcache_plugin_authcache_easy_authcache_plugin_prepare_mock_vars($module, &$vars, $id, $params) {
+  static $variables_added = FALSE;
+  $params = array();
+  $selector = easy_authcache_get_selector($id);  
+  $params['easy_authcache'] = array();
+  $params['easy_authcache']['items'] = array();
+  $params['easy_authcache']['items'][] = array(
+    'id' => $module, 
+    'data' => array('params' => $params, 'selector' => ".$selector"));
+  drupal_add_js($params, 'setting');
+  
+  if (! $variables_added) {
+    $variables = array();
+    $variables['easy_authcache']['single_request'] = variable_get('easy_authcache_single_request', TRUE);
+    $max_age = variable_get('easy_authcache_max_age', 3600);
+    if (is_numeric($max_age)) {
+      $variables['easy_authcache']['max_age'] = $max_age;
+    }
+    drupal_add_js($variables, 'setting');
+    drupal_add_js(drupal_get_path('module', 'easy_authcache_plugin_authcache') . '/js/easy_authcache.js', 'module', 'header');
+    $variables_added = TRUE;
+  }
+  $vars['selector'] = $selector;
+}

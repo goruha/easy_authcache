@@ -8,4 +8,7 @@
  *  
  */
 ?>
-<esi:include $path"/>
+<esi:include src="<?php print $path; ?>"/>
+<?php if (isset($debug)) :?>
+<?php print $debug; ?>
+<?php endif;?>
