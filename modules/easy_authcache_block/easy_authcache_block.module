@@ -41,7 +41,7 @@ function easy_authcache_block_form_alter(&$form, $form_state, $form_id) {
         '#default_value' => $params['just_run'],
       );
 
-      $form['#submit'][] = 'dunod_block_admin_configure_submit';
+      $form['#submit'][] = 'easy_authcache_block_admin_configure_submit';
       break;
     default:
       break;
@@ -55,7 +55,7 @@ function easy_authcache_block_form_alter(&$form, $form_state, $form_id) {
  * @param  array $form
  * @param  array $form_state
  */
-function dunod_block_admin_configure_submit($form, &$form_state) {
+function easy_authcache_block_admin_configure_submit($form, &$form_state) {
   $module = $form_state['values']['module'];
   $delta = $form_state['values']['delta'];
   $value['use_ajax'] = $form_state['values']['easy_authcache_block_block_load_dynamic'];
