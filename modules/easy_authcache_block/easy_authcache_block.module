@@ -130,9 +130,6 @@ function easy_authcache_block_theme_registry_alter(&$theme_registry) {
  * @return void
  */
 function easy_authcache_block_block_dynamic_load(&$vars) {
-  global $is_page_authcache;
-  // If page cached
-  if ($is_page_authcache) {
     // Get configs
     $conf = _easy_authcache_block_block_settings_get_variable($vars['block']->module, $vars['block']->delta);
     // If get this block with ajax
@@ -146,7 +143,6 @@ function easy_authcache_block_block_dynamic_load(&$vars) {
       // Apply dynamic theme. Replace output html with mockup, add js files and settings
       easy_authcache_apply_dynamic_theme(EASY_AUTHCACHE_BLOCK_ID, $vars, $selector, $params, $conf['just_run']);
     }
-  }
 }
 
 /**

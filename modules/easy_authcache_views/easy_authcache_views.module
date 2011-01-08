@@ -81,7 +81,7 @@ function easy_authcache_views_theme_registry_alter(&$theme_registry) {
       if (!isset($functions[$function])) {
         $functions[] = $function;
         easy_authcache_override_theme($theme_registry, $function, 'easy_authcache_views_dynamic_load');
-      }      
+      }
     }
   }
 }
