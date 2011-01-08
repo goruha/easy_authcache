@@ -1,0 +1,26 @@
+<?php
+define('EASY_AUTHCACHE_PLUGIN_AUTHCACHE', 'easy_authcache_plugin_authcache');
+define('EASY_AUTHCACHE_CALLBACK_FILE', 'authcache.ajax.inc');
+define('EASY_AUTHCACHE_CALLBACK_HOOK', 'authcache_cached');
+
+/**
+ * Implementation hook_easy_authcache_plugin()
+ */
+function easy_authcache_plugin_authcache_easy_authcache_plugin() {
+  return array(
+    EASY_AUTHCACHE_PLUGIN_AUTHCACHE => t('Authcache')
+  );
+}
+
+function easy_authcache_plugin_authcache_easy_authcache_plugin_theme_path() {
+  return '';
+}
+
+function easy_authcache_plugin_authcache_easy_authcache_plugin_template_name() {
+  return 'mock';
+}
+
+function easy_authcache_plugin_authcache_easy_authcache_plugin_use_replace() {
+  global $is_page_authcache;
+  return $is_page_authcache;
+}
