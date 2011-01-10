@@ -7,6 +7,9 @@ define('EASY_AUTHCACHE_PLUGIN_TEMPLATE_NAME_HOOK', 'easy_authcache_plugin_templa
 define('EASY_AUTHCACHE_PLUGIN_USE_REPLACE_HOOK', 'easy_authcache_plugin_use_replace');
 define('EASY_AUTHCACHE_PLUGIN_PREPARE_MOCK_VARS_HOOK', 'easy_authcache_plugin_prepare_mock_vars');
 
+define('EASY_AUTHCACHE_SUBMODULE_CALLBACK_HOOK', 'easy_authcache_submodule_callback');
+
+
 
 
 /**
@@ -44,7 +47,17 @@ function easy_authcache_theme_callback(&$vars) {
   // If we need to replace dynamic regions with mock
   if (easy_authcache_current_plugin_call(EASY_AUTHCACHE_PLUGIN_USE_REPLACE_HOOK)) {
     $function = $hooks[$theme_name]['easy_authcache_callback'];
-    $function($vars);
+    // call submodule  callback for current theme
+    $data = $function($vars);    
+    if (!is_null($data)) {
+      $current_plugin = easy_authcache_current_plugin();
+      $function = $current_plugin .'_'. EASY_AUTHCACHE_PLUGIN_PREPARE_MOCK_VARS_HOOK;
+      // call plugin callback for current plugin
+      $hash = easy_authcache_set_dynamic_region_data($data);
+      $function($vars, $hash);
+      $template_name = easy_authcache_current_plugin_call(EASY_AUTHCACHE_PLUGIN_TEMPLATE_NAME_HOOK);
+      $vars['template_files'] = array($template_name);
+    }
   }
   //If it was function base theme
   elseif(isset($hooks[$theme_name]['easy_authcache_theme_default_function']) && ! empty($hooks[$theme_name]['easy_authcache_theme_default_function'])) {
@@ -59,6 +72,20 @@ function easy_authcache_theme_callback(&$vars) {
   // else it is template base function and will process correctly with out any changes
 }
 
+function easy_authcache_set_dynamic_region_data($data) {
+  $module = $data['module'];
+  $id = $data['id'];
+  $data_params = serialize($data['params']);
+  $hash = stripcslashes(md5("{$module}::{$id}::{$data_params}"));
+  cache_set("easy_authcache_params::$hash", $data);
+  return $hash; 
+}
+
+function easy_authcache_get_dynamic_region_data($hash) {
+  $cache = cache_get("easy_authcache_params::$hash");
+  return $cache->data; 
+}
+
 /**
  * Apply getting with ajax to current theming function
  *
@@ -68,7 +95,7 @@ function easy_authcache_theme_callback(&$vars) {
  * @param array $params params will be added to js and send with ajax
  * @param bool $save_html show default theming html
  */
-function easy_authcache_apply_dynamic_theme($module, &$vars, $id, $params) {  
+/*function easy_authcache_apply_dynamic_theme($module, &$vars, $id, $params) {  
 //  $vars['selector'] = $selector;
   //if (!$save_html) {
   $current_plugin = easy_authcache_current_plugin();
@@ -77,7 +104,7 @@ function easy_authcache_apply_dynamic_theme($module, &$vars, $id, $params) {
   $template_name = easy_authcache_current_plugin_call(EASY_AUTHCACHE_PLUGIN_TEMPLATE_NAME_HOOK);
   $vars['template_files'] = array($template_name);
   //}
-}
+}*/
 
 
 
@@ -236,8 +263,7 @@ function easy_authcache_store_js_files(&$vars) {
           $result[] = $file_name;
         }
       }
-    }
-    ;
+    };
   }
   $result = array_unique($result);
   drupal_add_js(array('easy_authcache_js' => $result), 'setting');

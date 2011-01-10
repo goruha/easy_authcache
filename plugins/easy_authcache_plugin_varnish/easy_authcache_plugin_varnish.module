@@ -1,5 +1,14 @@
 <?php
 define('EASY_AUTHCACHE_PLUGIN_VARNISH', 'easy_authcache_plugin_varnish');
+global $is_varnish;
+
+/**
+ * Implementation hook_easy_authcache_plugin()
+ */
+function easy_authcache_plugin_varnish_init() {
+  global $is_varnish;
+  $is_varnish = TRUE;
+}
 
 /**
  * Implementation hook_easy_authcache_plugin()
@@ -17,10 +26,11 @@ function easy_authcache_plugin_varnish_easy_authcache_plugin_template_name() {
 }
 
 function easy_authcache_plugin_varnish_easy_authcache_plugin_use_replace() {
-  return TRUE;
+  global $is_varnish;
+  return $is_varnish;
 }
 
-function easy_authcache_plugin_varnish_easy_authcache_plugin_prepare_mock_vars(/*$module,*/ &$vars,/* $id, */$hash/*, $params*/) {
+function easy_authcache_plugin_varnish_easy_authcache_plugin_prepare_mock_vars(&$vars, $hash) {
   $path = url("easy_authcache_plugin_varnish/$hash", array('absolute' => TRUE));
   if (user_access('debug easy authcache varnish')) {
     $vars['debug'] = l($path ,$path, array('external' => TRUE));
@@ -41,11 +51,12 @@ function easy_authcache_plugin_varnish_menu() {
 }
 
 function easy_authcache_plugin_varnish_callback($hash) {
-  $cache = cache_get("easy_authcache_plugin_varnish_params:$hash");
-  if ($cache->data) {
-    var_dump($cache->data);
-  }
-  echo '111';
+  global $is_varnish;
+  $is_varnish = FALSE;
+  $data = easy_authcache_get_dynamic_region_data($hash);
+  $module = $data['module'];
+  $result = module_invoke($module, EASY_AUTHCACHE_SUBMODULE_CALLBACK_HOOK, $data['params']);
+  print $result;
   return null;
 }
 
