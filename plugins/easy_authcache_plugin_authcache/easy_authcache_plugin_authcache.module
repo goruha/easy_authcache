@@ -49,3 +49,88 @@ function easy_authcache_plugin_authcache_easy_authcache_plugin_prepare_mock_vars
   }
   $vars['selector'] = $selector;
 }
+
+/**
+ *
+ * Store list of js files in drupal js settings
+ * to make ajax add js faster and undependend of js aggregation
+ *
+ * @global bool $is_page_authcache flag if current page is for caching
+ * @param array $vars variables for page template
+ */
+function easy_authcache_store_js_files(&$vars) {
+  $result = array();
+  $js = drupal_add_js(NULL, NULL, NULL);
+  foreach ($js as $section) {
+    foreach ($section as $key => $items) {
+      if ($key != 'inline' && $key != 'setting') {
+        foreach ($items as $file_name => $variable) {
+          $result[] = $file_name;
+        }
+      }
+    };
+  }
+  $result = array_unique($result);
+  drupal_add_js(array('easy_authcache_js' => $result), 'setting');
+    $vars['scripts'] = drupal_get_js();
+}
+
+/**
+ * Function that handle authcache ajax callback and call easy authcache ajax callbacks for each theme function
+ * @param array $data params for all dynamic regions retriving with ajax
+ * @return string JSON result array
+ */
+function _easy_authcache_process($data) {
+  $output = array();
+  // TODO: Remake js JSON converter to remove <br> html.
+  $data = str_replace('<br>', '', $data);
+  $data = json_decode($data);
+  foreach ($data as $module => $params) {
+    if (module_hook($module, EASY_AUTHCACHE_CALLBACK_HOOK)) {
+      $output = array_merge($output, module_invoke($module, EASY_AUTHCACHE_CALLBACK_HOOK, $params));
+    }
+  }
+  $result = array();
+  $result['items'] = $output;
+  $result['js'] = drupal_add_js(NULL, NULL, NULL);
+  return json_encode($result);
+}
+
+/**
+ * Implementation hook_easy_authcache_config()
+ */
+function easy_authcache_plugin_authcache_easy_authcache_config() {
+  $items = array();
+  
+  $items['default']['easy_authcache_single_request'] = array(
+    '#type' => 'checkbox', 
+    '#title' => t('Use single ajax request'), 
+    '#description' => t('If selected plugins will be getted with single ajax, else each plugin will send own ajax request'), 
+    '#return_value' => TRUE, 
+    '#default_value' => variable_get('easy_authcache_single_request', TRUE));
+  
+  $items['default']['easy_authcache_max_age'] = array(
+    '#type' => 'textfield', 
+    '#title' => t('Max ajax age'), 
+    '#default_value' => variable_get('easy_authcache_max_age', 3600)
+  );
+  
+  return $items;
+}
+
+/**
+ * Implementation hook_theme_registry_alter()
+ */
+function easy_authcache_plugin_authcache_theme_registry_alter(&$theme_registry) {
+  // Add easy_authcache_store_js_files as the last preprocess function for page theme
+  _easy_authcache_add_theme_registry_last($theme_registry, 'page', 'easy_authcache_store_js_files');
+}
+
+/**
+ * Function returns selector to prevent using other modules selectors
+ * @param string $cache_id unique id for cache html
+ * @return string selector
+ */
+function easy_authcache_get_selector($cache_id) {
+  return 'dynamic-region-' . $cache_id;
+}

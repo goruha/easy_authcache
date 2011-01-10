@@ -12,8 +12,6 @@ define('EASY_AUTHCACHE_BLOCK_ID', 'easy_authcache_block');
 
 // Admininstation part implementation
 
-
-
 /**
  *
  * Implementation hook_form_alter();
@@ -111,21 +109,14 @@ function _easy_authcache_block_block_id($module, $delta) {
 
 // Easy authcache implementation 
 
-
-
-
-/**
- *
- * Implementation hook_theme_registry_alter
- *
- * @param  $theme_registry
- * @return void
- */
-function easy_authcache_block_theme_registry_alter(&$theme_registry) {
-  easy_authcache_override_theme($theme_registry, 'block', 'easy_authcache_block_block_dynamic_load');
+function easy_authcache_block_easy_authcache_register() {
+  $items[] = array(
+    'theme' => 'block',
+    'mock callback' => 'easy_authcache_block_block_dynamic_load',
+    'callback' => 'easy_authcache_block_callback'
+  );
+  return $items;
 }
-
-
 /**
  *
  * Callback for overriden theme
@@ -139,23 +130,12 @@ function easy_authcache_block_block_dynamic_load(&$vars) {
   // If get this block with ajax
   if ($conf['use_ajax']) {
     $block_id = _easy_authcache_block_block_id($vars['block']->module, $vars['block']->delta);
-    //authcache specific parameter, $conf['just_run']
     $params = array(
       'region' => $vars['block']->region, 
-      'block_id' => $block_id)//      'just_run' => $conf['just_run']
-    ;
+      'block_id' => $block_id);
     return array(
       'id' => $block_id, 
-      'module' => EASY_AUTHCACHE_BLOCK_ID, 
       'params' => $params);
-  
-
-
-
-   //easy_authcache_apply_dynamic_theme(EASY_AUTHCACHE_BLOCK_ID, $vars, $block_id, $params);
-  //    $selector = easy_authcache_get_selector($vars['block']->module . '-' . $vars['block']->delta);
-  // Prepare params for ajax callback function
-  // Apply dynamic theme. Replace output html with mockup, add js files and settings   
   }
   return null;
 }
@@ -167,7 +147,7 @@ function easy_authcache_block_block_dynamic_load(&$vars) {
  * @param  $data
  * @return array
  */
-function easy_authcache_block_easy_authcache_submodule_callback($data) {
+function easy_authcache_block_callback($data) {
   global $theme_key;
   global $user;
   

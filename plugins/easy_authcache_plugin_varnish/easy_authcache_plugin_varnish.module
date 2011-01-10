@@ -54,8 +54,8 @@ function easy_authcache_plugin_varnish_callback($hash) {
   global $is_varnish;
   $is_varnish = FALSE;
   $data = easy_authcache_get_dynamic_region_data($hash);
-  $module = $data['module'];
-  $result = module_invoke($module, EASY_AUTHCACHE_SUBMODULE_CALLBACK_HOOK, $data['params']);
+  $callback = $data['callback'];
+  $result = $callback($data['params']);
   print $result;
   return null;
 }

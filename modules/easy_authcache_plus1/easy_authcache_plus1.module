@@ -16,7 +16,7 @@ define('EASY_AUTHCACHE_PLUS1_THEME', 'plus1_widget');
  * @param array $theme_registry
  */
 function easy_authcache_plus1_theme_registry_alter(&$theme_registry) {
-  easy_authcache_override_theme($theme_registry, EASY_AUTHCACHE_PLUS1_THEME, 'easy_authcache_plus1_dynamic_load');
+  _easy_authcache_override_theme($theme_registry, EASY_AUTHCACHE_PLUS1_THEME, 'easy_authcache_plus1_dynamic_load');
 }
 
 /**

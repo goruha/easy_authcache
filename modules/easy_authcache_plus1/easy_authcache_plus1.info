@@ -1,8 +1,0 @@
-; $Id$
-
-name = Easy authcache plus1
-description = Implement Easy authcache api to get plus1 widget with ajax
-dependencies[] = easy_authcache
-dependencies[] = plus1
-core = 6.x
-package = Caching

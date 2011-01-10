@@ -1,7 +1,0 @@
-; $Id;
-name = Easy authcache views
-description = Implement Easy authcache api to get views with ajax
-dependencies[] = easy_authcache
-dependencies[] = views
-core = 6.x
-package = Caching
