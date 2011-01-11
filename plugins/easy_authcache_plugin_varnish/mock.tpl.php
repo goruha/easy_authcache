@@ -9,6 +9,6 @@
  */
 ?>
 <esi:include src="<?php print $path; ?>"/>
-<?php if (isset($debug)) :?>
+<!--<?php if (isset($debug)) :?>
 <?php print $debug; ?>
-<?php endif;?>
+<?php endif;?>-->
