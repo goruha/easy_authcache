@@ -1,4 +1,3 @@
-; $Id$
 
 name = Easy authcache plus1
 description = Implement Easy authcache api to get plus1 widget with ajax

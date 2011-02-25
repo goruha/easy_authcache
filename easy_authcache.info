@@ -1,4 +1,3 @@
-; $Id$
 name = Easy Authcache
 description = Provide API for easy authcache implemantation
 dependencies[] = authcache

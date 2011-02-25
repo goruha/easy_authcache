@@ -1,4 +1,3 @@
-; $Id$
 name = Easy Authcache Pressflow 
 description = Fix has_js Pressflow issue to make easy authacache work correct  
 dependencies[] = easy_authcache

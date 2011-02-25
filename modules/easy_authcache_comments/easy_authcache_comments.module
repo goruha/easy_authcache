@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 define('EASY_AUTHCACHE_COMMENTS_ID', 'easy_authcache_comments');
 

@@ -1,4 +1,3 @@
-; $Id$
 name = Easy authcache comments
 description = Implement Easy authcache api to get comments with ajax
 dependencies[] = easy_authcache
