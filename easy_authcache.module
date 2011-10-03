@@ -53,7 +53,7 @@ function easy_authcache_apply_dynamic_theme($module, &$vars, $selector, $params,
  * @param array $params params will be send with ajax and passed to ajax callback function
  * @return void
  */
-function easy_authcache_apply_dynamic($module, $selector, $params) {
+function easy_authcache_apply_dynamic($module, $selector, $data) {
     static $variables_added = FALSE;
     $params = array();
     $params['easy_authcache'] = array();
@@ -61,7 +61,7 @@ function easy_authcache_apply_dynamic($module, $selector, $params) {
     $params['easy_authcache']['items'][] = array(
         'id' => $module,
         'data' => array(
-            'params' => $params,
+            'params' => $data,
             'selector' => ".$selector",
         )
     );
