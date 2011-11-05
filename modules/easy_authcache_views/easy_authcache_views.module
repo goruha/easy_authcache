@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * @file
@@ -49,15 +48,8 @@ function easy_authcache_views_easy_authcache_config() {
  */
 function easy_authcache_views_theme_registry_alter(&$theme_registry) {
   $functions = array();
-  $views = array();
+  $views = easy_authcache_get_easy_authcache_views();
   
-  // get array view => array(display);
-  $temp = array_filter(variable_get('easy_authcache_views', array()));
-  foreach ($temp as $value) {
-    $parts = explode('|', $value);
-    $views[$parts[0]][] = $parts[1];
-  }
-
   foreach ($views as $view_name => $displays) {
     // Load view
     $view = views_get_view($view_name);
@@ -67,6 +59,7 @@ function easy_authcache_views_theme_registry_alter(&$theme_registry) {
       $view->set_display($display);
       // get theme functions candidates
       $function = $view->display_handler->theme_functions();
+
       // Get actual theme function
       if (is_array($function)) {
         foreach ($function as $candidate) {
@@ -78,9 +71,9 @@ function easy_authcache_views_theme_registry_alter(&$theme_registry) {
       }
 
       // Override theme
-      if (!isset($functions[$function])) {
+      if (!in_array($function, $functions)) {
         $functions[] = $function;
-        _easy_authcache_override_theme($theme_registry, $function, 'easy_authcache_views_dynamic_load');
+        easy_authcache_override_theme($theme_registry, $function, 'easy_authcache_views_dynamic_load');
       }
     }
   }
@@ -96,16 +89,24 @@ function easy_authcache_views_theme_registry_alter(&$theme_registry) {
 function easy_authcache_views_dynamic_load(&$vars) {
   global $is_page_authcache;
   if ($is_page_authcache) {
-        $view = $vars['name'];
-        $display = $vars['display_id'];
-        $args = $vars['view']->args;
-        $selector = easy_authcache_get_selector('views-'. $view .'-'. $display .'-'. implode('-', $args));
-        $params = array(
-          'view' => $view,
-          'display' => $display,
-          'args' => $args,
-        );
-        easy_authcache_apply_dynamic_theme(EASY_AUTHCACHE_VIEWS_ID, $vars, $selector, $params);
+    // get array view => array(display);
+    $views = easy_authcache_get_easy_authcache_views();
+    $view = $vars['name'];
+    $display = $vars['display_id'];
+
+    if (empty($views[$view]) || !in_array($display, $views[$view])) {
+      // this view shouldn't be loaded via easy_authcache
+      return;
+    }
+
+    $args = $vars['view']->args;
+    $selector = easy_authcache_get_selector('views-' . $view . '-' . $display . '-' . implode('-', $args));
+    $params = array(
+      'view' => $view,
+      'display' => $display,
+      'args' => $args,
+    );
+    easy_authcache_apply_dynamic_theme(EASY_AUTHCACHE_VIEWS_ID, $vars, $selector, $params);
   }
 }
 
@@ -136,4 +137,23 @@ function easy_authcache_views_authcache_cached($data) {
     }
   }
   return $return;
+}
+
+
+
+/**
+ * Get list of views that should be loaded via easy_authcached AJAX
+ *@return assosiative array:
+ *          view => array(display)
+ */
+function easy_authcache_get_easy_authcache_views(){
+  $views = array();
+  // get array view => array(display);
+  $temp = array_filter(variable_get('easy_authcache_views', array()));
+  foreach ($temp as $value) {
+    $parts = explode('|', $value);
+    $views[$parts[0]][] = $parts[1];
+  }
+
+  return $views;
 }
