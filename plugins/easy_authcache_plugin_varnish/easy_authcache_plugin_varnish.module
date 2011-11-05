@@ -1,0 +1,66 @@
+<?php
+define('EASY_AUTHCACHE_PLUGIN_VARNISH', 'easy_authcache_plugin_varnish');
+global $is_varnish;
+
+/**
+ * Implementation hook_easy_authcache_plugin()
+ */
+function easy_authcache_plugin_varnish_init() {
+  global $is_varnish;
+  $is_varnish = TRUE;
+}
+
+/**
+ * Implementation hook_easy_authcache_plugin()
+ */
+function easy_authcache_plugin_varnish_easy_authcache_plugin() {
+  return array(EASY_AUTHCACHE_PLUGIN_VARNISH => t('Varnish'));
+}
+
+function easy_authcache_plugin_varnish_easy_authcache_plugin_theme_path() {
+  return '';
+}
+
+function easy_authcache_plugin_varnish_easy_authcache_plugin_template_name() {
+  return 'mock';
+}
+
+function easy_authcache_plugin_varnish_easy_authcache_plugin_use_replace() {
+  global $is_varnish;
+  return $is_varnish;
+}
+
+function easy_authcache_plugin_varnish_easy_authcache_plugin_prepare_mock_vars(&$vars, $hash) {
+  $path = url("easy_authcache_plugin_varnish/$hash", array('absolute' => TRUE));
+  if (user_access('debug easy authcache varnish')) {
+    $vars['debug'] = l($path ,$path, array('external' => TRUE));
+  }
+  $vars['path'] = $path;
+}
+
+function easy_authcache_plugin_varnish_menu() {
+  $items = array();
+  $items['easy_authcache_plugin_varnish/%'] = array(
+    'title' => 'Easy authcache plugin varnish callback',
+    'page callback' => 'easy_authcache_plugin_varnish_callback',
+    'page arguments' => array(1),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK  
+  );
+  return $items;
+}
+
+function easy_authcache_plugin_varnish_callback($hash) {
+  global $is_varnish;
+  $is_varnish = FALSE;
+  $data = easy_authcache_get_dynamic_region_data($hash);
+  $callback = $data['callback'];
+  $result = $callback($data['params']);
+  
+  return $result;
+  //return null;
+}
+
+function easy_authcache_plugin_varnish_perms() {
+  return array('debug easy authcache varnish');
+}

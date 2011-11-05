@@ -1,3 +1,4 @@
+; $Id$
 name = Easy authcache block
 description = Implement Easy authcache api to get blocks with ajax
 dependencies[] = easy_authcache

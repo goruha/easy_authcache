@@ -1,4 +1,5 @@
 <?php
+// $Id$
 
 define('EASY_AUTHCACHE_COMMENTS_ID', 'easy_authcache_comments');
 
@@ -18,7 +19,7 @@ define('EASY_AUTHCACHE_COMMENTS_ID', 'easy_authcache_comments');
  * @param array $theme_registry
  */
 function easy_authcache_comments_theme_registry_alter(&$theme_registry) {
-  easy_authcache_override_theme($theme_registry, 'comment_wrapper', 'easy_authcache_comments_dynamic_load');
+  _easy_authcache_override_theme($theme_registry, 'comment_wrapper', 'easy_authcache_comments_dynamic_load');
 }
 
 /**

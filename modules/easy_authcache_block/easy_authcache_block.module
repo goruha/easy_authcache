@@ -1,4 +1,7 @@
 <?php
+// $Id$
+
+
 
 /**
  * @file
@@ -16,33 +19,31 @@ define('EASY_AUTHCACHE_BLOCK_ID', 'easy_authcache_block');
  */
 function easy_authcache_block_form_alter(&$form, $form_state, $form_id) {
   switch ($form_id) {
-    case 'block_admin_configure':
+    case 'block_admin_configure' :
       $form['easy_authcache_block_settings'] = array(
-        '#type' => 'fieldset',
-        '#title' => t('Ajax reload settings'),
-        '#description' => t('This settings used my module !module for configing authcache ajax', array('!module' => 'easy_authcache_block')),
-        '#weight' => 0,
-      );
-
+        '#type' => 'fieldset', 
+        '#title' => t('Ajax reload settings'), 
+        '#description' => t('This settings used my module !module for configing authcache ajax', array(
+          '!module' => 'easy_authcache_block')), 
+        '#weight' => 0);
+      
       $params = _easy_authcache_block_block_settings_get_variable($form['module']['#value'], $form['delta']['#value']);
-
+      
       $form['easy_authcache_block_settings']['easy_authcache_block_block_load_dynamic'] = array(
-        '#type' => 'checkbox',
-        '#title' => t('Download by ajax'),
-        '#description' => t('This block will be downloaded by ajax on pages cached by authcache'),
-        '#default_value' => $params['use_ajax'],
-      );
-
+        '#type' => 'checkbox', 
+        '#title' => t('Download by ajax'), 
+        '#description' => t('This block will be downloaded by ajax on pages cached by authcache'), 
+        '#default_value' => $params['use_ajax']);
+      
       $form['easy_authcache_block_settings']['easy_authcache_block_block_just_run_block'] = array(
-        '#type' => 'checkbox',
-        '#title' => t('Just run by ajax'),
-        '#description' => t('If selected block would not overloaded by ajax but will be processed on server side'),
-        '#default_value' => $params['just_run'],
-      );
-
+        '#type' => 'checkbox', 
+        '#title' => t('Just run by ajax'), 
+        '#description' => t('If selected block would not overloaded by ajax but will be processed on server side'), 
+        '#default_value' => $params['just_run']);
+      
       $form['#submit'][] = 'easy_authcache_block_admin_configure_submit';
       break;
-    default:
+    default :
       break;
   }
 }
@@ -103,24 +104,19 @@ function _easy_authcache_block_block_settings_set_variable($module, $delta, $val
  * @return string
  */
 function _easy_authcache_block_block_id($module, $delta) {
-  return $module .'_'. $delta;
+  return $module . '_' . $delta;
 }
 
 // Easy authcache implementation 
 
-
-/**
- *
- * Implementation hook_theme_registry_alter
- *
- * @param  $theme_registry
- * @return void
- */
-function easy_authcache_block_theme_registry_alter(&$theme_registry) {
-  easy_authcache_override_theme($theme_registry, 'block', 'easy_authcache_block_block_dynamic_load');
+function easy_authcache_block_easy_authcache_register() {
+  $items[] = array(
+    'theme' => 'block',
+    'mock callback' => 'easy_authcache_block_block_dynamic_load',
+    'callback' => 'easy_authcache_block_callback'
+  );
+  return $items;
 }
-
-
 /**
  *
  * Callback for overriden theme
@@ -129,23 +125,19 @@ function easy_authcache_block_theme_registry_alter(&$theme_registry) {
  * @return void
  */
 function easy_authcache_block_block_dynamic_load(&$vars) {
-  global $is_page_authcache;
-  // If page cached
-  if ($is_page_authcache) {
-    // Get configs
-    $conf = _easy_authcache_block_block_settings_get_variable($vars['block']->module, $vars['block']->delta);
-    // If get this block with ajax
-    if ($conf['use_ajax']) {
-      $block_id = _easy_authcache_block_block_id($vars['block']->module, $vars['block']->delta);
-      $selector = easy_authcache_get_selector($vars['block']->module . '-' . $vars['block']->delta);
-      // Prepare params for ajax callback function
-      $params = array('region' => $vars['block']->region,
-                      'block_id' => $block_id,
-                      'just_run' => $conf['just_run']);
-      // Apply dynamic theme. Replace output html with mockup, add js files and settings
-      easy_authcache_apply_dynamic_theme(EASY_AUTHCACHE_BLOCK_ID, $vars, $selector, $params, $conf['just_run']);
-    }
+  // Get configs
+  $conf = _easy_authcache_block_block_settings_get_variable($vars['block']->module, $vars['block']->delta);
+  // If get this block with ajax
+  if ($conf['use_ajax']) {
+    $block_id = _easy_authcache_block_block_id($vars['block']->module, $vars['block']->delta);
+    $params = array(
+      'region' => $vars['block']->region, 
+      'block_id' => $block_id);
+    return array(
+      'id' => $block_id, 
+      'params' => $params);
   }
+  return null;
 }
 
 /**
@@ -155,108 +147,71 @@ function easy_authcache_block_block_dynamic_load(&$vars) {
  * @param  $data
  * @return array
  */
-function easy_authcache_block_authcache_cached($data) {
+function easy_authcache_block_callback($data) {
   global $theme_key;
   global $user;
-  // Return array
-  $return = array();
-  // Blocks we run with ajax
-  $blocks = array();
-  // Array of blocks' parameters with block_id => params
-  $blocks_params = array();
-  // Helper array to store order processing blocks
-  $blocks_order = array();
-
+  
+  if (empty($data)) {
+    return '';
+  }
+  
+  $block_id = $data['block_id'];
+    
   // Rehash blocks for current theme
   _block_rehash();
-
-  // start from 0 possition
-  $pos = 0;
-  foreach ($data as $block) {
-  // We do not support ajax loading same blocks on one page
-  // twice in different regions.
-    $blocks_params[$block->params->block_id] = $block;
-    $blocks_order[$block->params->block_id] = $pos;
-    $pos ++;
-  }
-
-  if (empty($blocks_params)) {
-    return array();
-  }
-
-  // Get array of blocks' ids
-  $blocks_ids = array_keys($blocks_params);
+  
   // Get current user roles
   $rids = array_keys($user->roles);
-
-
+  
   $sql = "SELECT DISTINCT b.*, ccb.block_id  FROM  {blocks} b
     JOIN {easy_authcache_blocks} ccb ON ccb.module = b.module AND ccb.delta = b.delta AND b.theme = '%s'
     LEFT JOIN {blocks_roles} r ON b.module = r.module AND b.delta = r.delta
-    WHERE (r.rid IN (". db_placeholders($rids) .") OR r.rid IS NULL) AND ccb.block_id IN (". db_placeholders($blocks_ids, 'varchar') .")
-    ORDER BY ccb.just_run ASC";
-  // WARNING:// ORDER BY is very important because first we process blocks that needs to be showen
-  // and they will you old data in session. And only then blocks that can add data in session
+    WHERE (r.rid IN (" . db_placeholders($rids) . ") OR r.rid IS NULL) AND ccb.block_id = '%s' LIMIT 0,1";
   // we need to add  b.status = 1 AND for sites used with out context
+  
 
-  $sql =   db_rewrite_sql($sql, 'b', 'bid');
+
+  $sql = db_rewrite_sql($sql, 'b', 'bid');
   // Get blocks
-  $result = db_query($sql, array_merge(array($theme_key), $rids, $blocks_ids));
+  $result = db_query($sql, array_merge(array($theme_key), $rids, array($block_id)));
   // Fill blocks array
-  while ($block = db_fetch_object($result)) {
-    $key = $blocks_order[$block->block_id];
-    $blocks[$key] = $block;
-  }
-  // Sort blocks in correct order
-  ksort($blocks);
-
+  $block = db_fetch_object($result);
+  
   // Process each block
-  foreach ($blocks as $block) {
-    $block_id = _easy_authcache_block_block_id($block->module, $block->delta);
-    $data = $blocks_params[$block_id];
-    $block->region = $data->params->region;
+  $block->region = $data['region'];
 
-    // Use the user's block visibility setting, if necessary need for work without context
-
-    // Match path if necessary need for work without context
-
-    if (!($block->throttle && (module_invoke('throttle', 'status') > 0))) {
+  if (! ($block->throttle && (module_invoke('throttle', 'status') > 0))) {
     // Try fetching the block from cache. Block caching is not compatible with
     // node_access modules. We also preserve the submission of forms in blocks,
     // by fetching from cache only if the request method is 'GET'.
-      if (!count(module_implements('node_grants')) && $_SERVER['REQUEST_METHOD'] == 'GET' && ($cid = _block_get_cache_id($block)) && ($cache = cache_get($cid, 'cache_block'))) {
-        $array = $cache->data;
-      }
-      else {
-        $array = module_invoke($block->module, 'block', 'view', $block->delta);
-        if (isset($cid)) {
-          cache_set($cid, $array, 'cache_block', CACHE_TEMPORARY);
-        }
-      }
-
-      if (isset($array) && is_array($array)) {
-        foreach ($array as $k => $v) {
-          $block->$k = $v;
-        }
+    if (! count(module_implements('node_grants')) && $_SERVER['REQUEST_METHOD'] == 'GET' && ($cid = _block_get_cache_id($block)) && ($cache = cache_get($cid, 'cache_block'))) {
+      $array = $cache->data;
+    }
+    else {
+      $array = module_invoke($block->module, 'block', 'view', $block->delta);
+      if (isset($cid)) {
+        cache_set($cid, $array, 'cache_block', CACHE_TEMPORARY);
       }
     }
-
-    if (isset($block->content) && $block->content) {
-    // Override default block title if a custom display title is present.
-      if ($block->title) {
-      // Check plain here to allow module generated titles to keep any markup.
-        $block->subject = $block->title == '<none>' ? '' : check_plain($block->title);
+    
+    if (isset($array) && is_array($array)) {
+      foreach ($array as $k => $v) {
+        $block->$k = $v;
       }
-      if (!isset($block->subject)) {
-        $block->subject = '';
-      }
-    }
-
-    $output = theme('block', $block);
-    if (!$data->params->just_run) {
-      $return[] = array('selector' => $data->selector,
-                      'output' => $output, 'type' => 'div');
     }
   }
-  return $return;
+  
+  if (isset($block->content) && $block->content) {
+    // Override default block title if a custom display title is present.
+    if ($block->title) {
+      // Check plain here to allow module generated titles to keep any markup.
+      $block->subject = $block->title == '<none>' ? '' : check_plain($block->title);
+    }
+    if (! isset($block->subject)) {
+      $block->subject = '';
+    }
+  }
+  
+  $output = theme('block', $block);
+  return $output;
 }
