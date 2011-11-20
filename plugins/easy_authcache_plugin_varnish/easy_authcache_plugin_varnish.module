@@ -53,14 +53,11 @@ function easy_authcache_plugin_varnish_menu() {
 function easy_authcache_plugin_varnish_callback($hash) {
   global $is_varnish;
   $is_varnish = FALSE;
-  $data = easy_authcache_get_dynamic_region_data($hash);
-  $callback = $data['callback'];
-  $result = $callback($data['params']);
-  
+  // @TODO: Add user login for case we remove cookie in varnish
+  $result = easy_authcache_get_dynamic_region_html($hash);
   return $result;
-  //return null;
 }
 
-function easy_authcache_plugin_varnish_perms() {
+function easy_authcache_plugin_varnish_perm() {
   return array('debug easy authcache varnish');
 }

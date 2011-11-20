@@ -25,18 +25,16 @@ function easy_authcache_plugin_authcache_easy_authcache_plugin_use_replace() {
   return $is_page_authcache;
 }
 
-function easy_authcache_plugin_authcache_easy_authcache_plugin_prepare_mock_vars($module, &$vars, $id, $params) {
+function easy_authcache_plugin_authcache_easy_authcache_plugin_prepare_mock_vars(&$vars, $hash) {
   static $variables_added = FALSE;
   $params = array();
-  $selector = easy_authcache_get_selector($id);  
+  $selector = easy_authcache_get_selector($hash);
   $params['easy_authcache'] = array();
   $params['easy_authcache']['items'] = array();
-  $params['easy_authcache']['items'][] = array(
-    'id' => $module, 
-    'data' => array('params' => $params, 'selector' => ".$selector"));
+  $params['easy_authcache']['items'][] = $hash;
   drupal_add_js($params, 'setting');
   
-  if (! $variables_added) {
+  if (!$variables_added) {
     $variables = array();
     $variables['easy_authcache']['single_request'] = variable_get('easy_authcache_single_request', TRUE);
     $max_age = variable_get('easy_authcache_max_age', 3600);
@@ -80,18 +78,16 @@ function easy_authcache_store_js_files(&$vars) {
  * @param array $data params for all dynamic regions retriving with ajax
  * @return string JSON result array
  */
-function _easy_authcache_process($data) {
-  $output = array();
+function easy_authcache_plugin_authcache_process($data) {
+  $result = array();
   // TODO: Remake js JSON converter to remove <br> html.
   $data = str_replace('<br>', '', $data);
   $data = json_decode($data);
-  foreach ($data as $module => $params) {
-    if (module_hook($module, EASY_AUTHCACHE_CALLBACK_HOOK)) {
-      $output = array_merge($output, module_invoke($module, EASY_AUTHCACHE_CALLBACK_HOOK, $params));
-    }
+  foreach ($data as $hash) {
+    $result['items'][$hash]['output']= easy_authcache_get_dynamic_region_html($hash);
+    // @TODO: Find way to get type for region specific way
+    $result['items'][$hash]['type']= 'div';
   }
-  $result = array();
-  $result['items'] = $output;
   $result['js'] = drupal_add_js(NULL, NULL, NULL);
   return json_encode($result);
 }
@@ -101,15 +97,22 @@ function _easy_authcache_process($data) {
  */
 function easy_authcache_plugin_authcache_easy_authcache_config() {
   $items = array();
+
+  $items['easy_authcache_plugin_authcache'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Authcache plugin configuration'),
+    '#description' => t('Default easy authcache configuration')
+  );
+
   
-  $items['default']['easy_authcache_single_request'] = array(
+  $items['easy_authcache_plugin_authcache']['easy_authcache_single_request'] = array(
     '#type' => 'checkbox', 
     '#title' => t('Use single ajax request'), 
     '#description' => t('If selected plugins will be getted with single ajax, else each plugin will send own ajax request'), 
     '#return_value' => TRUE, 
     '#default_value' => variable_get('easy_authcache_single_request', TRUE));
   
-  $items['default']['easy_authcache_max_age'] = array(
+  $items['easy_authcache_plugin_authcache']['easy_authcache_max_age'] = array(
     '#type' => 'textfield', 
     '#title' => t('Max ajax age'), 
     '#default_value' => variable_get('easy_authcache_max_age', 3600)

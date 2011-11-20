@@ -72,6 +72,13 @@ function easy_authcache_get_dynamic_region_data($hash) {
   return $cache->data;
 }
 
+function easy_authcache_get_dynamic_region_html($hash) {
+  $data = easy_authcache_get_dynamic_region_data($hash);
+  $result = call_user_func($data['callback'], $data['params']);
+  return $result;
+}
+
+
 // Helpers -----------------------------------------------------------------
 
 /**

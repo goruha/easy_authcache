@@ -13,5 +13,5 @@
  * @return string json result
  */
 function _authcache_easy_authcache($data) {
-  return _easy_authcache_process($data);
+  return easy_authcache_plugin_authcache_process($data);
 }

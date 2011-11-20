@@ -11,7 +11,7 @@
 /**
  * Add the has_js cookie to the user's JS entry
  */
-function  easy_authcache_pressflow_init() {
+function easy_authcache_pressflow_init() {
   global $user;
   if ($user->uid > 0) {
     drupal_add_js('document.cookie = "has_js=1; path=/";', 'inline');
@@ -21,7 +21,7 @@ function  easy_authcache_pressflow_init() {
 /**
  * Adds a 'has_js' cookie for only logged-in users
  */
-function  easy_authcache_pressflow_user($op, &$edit, $account) {
+function easy_authcache_pressflow_user($op, &$edit, $account) {
   if ($op == 'logout') {
     setcookie('has_js', '', time() - 3600);
   }

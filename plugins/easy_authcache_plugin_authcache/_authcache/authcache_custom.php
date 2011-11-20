@@ -38,7 +38,7 @@ $_GET = array_merge($_GET, $params);
 include_once './includes/common.inc';
 drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL); // Use FULL if needed for additional functions
 //Include easy authcache ajax process code
-module_load_include('inc', 'easy_authcache', 'callback/authcache.ajax');
+module_load_include('inc', 'easy_authcache_plugin_authcache', 'callback/authcache.ajax');
 
 
 /**

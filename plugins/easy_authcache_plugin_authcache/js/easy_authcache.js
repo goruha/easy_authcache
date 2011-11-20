@@ -23,31 +23,20 @@ $(function() {
     if (authcacheIsNumeric(Drupal.settings.easy_authcache.max_age)) {
         ajaxJson['max_age'] = Drupal.settings.easy_authcache.max_age;
     }
-    // collect data required by ajax callbacks
-    var option = {};
-    for (var v in Drupal.settings.easy_authcache.items) {
-        var key = Drupal.settings.easy_authcache.items[v]['id'];
-        var value = '';
-        value = Drupal.settings.easy_authcache.items[v]['data'];
-        if (!option[key]) {
-            option[key] = {};
-        }
-        option[key][v] = value;
-    }
 
     // If single request settings is setted
     if (Drupal.settings.easy_authcache.single_request == true) {
         var send = [];
-        send['easy_authcache'] = JSON.stringify(option);
+        send['easy_authcache'] = JSON.stringify(Drupal.settings.easy_authcache.items);
         ajaxJson = $.extend(ajaxJson, send);
         if (typeof(Authcache) != 'undefined') Authcache.ajaxRequest(ajaxJson);
     }
     else {
         // Call one request per one easyauthcache plugin
-        for (var key in option) {
+        for (var key in Drupal.settings.easy_authcache.items) {
             var send = [];
             var temp = {};
-            temp[key] = option[key];
+            temp[key] = Drupal.settings.easy_authcache.items[key];
             send['easy_authcache'] = JSON.stringify(temp);
             ajaxJson = $.extend(ajaxJson, send);
             if (typeof(Authcache) != 'undefined') Authcache.ajaxRequest(ajaxJson);
@@ -91,12 +80,16 @@ function _authcache_easy_authcache(data) {
             context = $('<' + type + '>' + data_obj.items[key].output + '</' + type + '>');
         }
         // Insert content into page
-        $(data_obj.items[key].selector).replaceWith(context);
+        $(_easy_authchache_selector(key)).replaceWith(context);
         if (type != 'text') {
             // Apply behaviours for html inserted result
             Drupal.attachBehaviors(context);
         }
     }
+}
+
+function _easy_authchache_selector(hash) {
+  return '.dynamic-region-' + hash;
 }
 
 /**
