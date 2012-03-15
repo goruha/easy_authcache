@@ -1,0 +1,101 @@
+<?php
+
+class EasyAuthcacheTestCase extends DrupalWebTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => t('EasyAuthcache api.'),
+      'group' => t('EasyAuthcache'),
+      'description' => t('Test EasyAuthcache api.'),
+    );
+  }
+
+  public function setUp($modules = array()) {
+    global $theme;
+    $modules[] = 'easy_authcache';
+    $modules[] = 'easy_authcache_test';
+    $modules = array_unique($modules);
+    if (version_compare(phpversion(), '5.3') < 0) {
+      call_user_func_array(array($this, 'parent::setUp'), $modules);
+    }
+    else {
+      call_user_func_array('parent::setUp', $modules);
+    }
+    $this->RebuildThemeRegistry($theme);
+  }
+
+  public function RebuildThemeRegistry($theme) {
+    drupal_rebuild_theme_registry();
+
+    $themes = list_themes();
+    $ancestor = $theme;
+    while ($ancestor && isset($themes[$ancestor]->base_theme)) {
+      $base_theme[] = $new_base_theme = $themes[$themes[$ancestor]->base_theme];
+      $ancestor = $themes[$ancestor]->base_theme;
+    }
+    _init_theme($themes[$theme], array_reverse($base_theme));
+  }
+
+  public function testOverrideThemeApi() {
+    $theme_registry = theme_get_registry();
+    $theme_name = EASY_AUTHCACHE_TEST_THEME_TEMPLATE;
+    $dynamic_theme = array(
+      'theme' => $theme_name,
+      'mock callback' => 'testmockcallback',
+      'callback' => 'testcallback',
+    );
+    $path1 = drupal_get_path('module', 'easy_authcache') . '/theme';
+    $this->assertTrue(module_exists('easy_authcache_test'));
+    $this->assertTrue(isset($theme_registry[$theme_name]));
+    _easy_authcache_override_theme($theme_registry, $dynamic_theme['theme'], $dynamic_theme['mock callback'], $dynamic_theme['callback']);
+    $theme_data = $theme_registry[$theme_name];
+    $this->assertEqual($dynamic_theme['mock callback'], $theme_data[EASY_AUTHCACHE_MOCK_CALLBACK_KEY]);
+    $this->assertEqual($dynamic_theme['callback'], $theme_data[EASY_AUTHCACHE_CALLBACK_KEY]);
+    $this->assertEqual(EASY_AUTHCACHE_THEME_CALLBACK, array_pop($theme_data['preprocess functions']));
+    $this->assertEqual($theme_name, $theme_data['arguments'][EASY_AUTHCACHE_THEME_NAME_KEY]);
+    $this->assertTrue(in_array($path1, $theme_data['theme paths']));
+  }
+
+  public function testOverrideThemeFunctionApi() {
+    $theme_registry = theme_get_registry();
+    $theme_name = EASY_AUTHCACHE_TEST_THEME_FUNCTION;
+    $dynamic_theme = array(
+      'theme' => $theme_name,
+      'mock callback' => 'testmockcallback',
+      'callback' => 'testcallback',
+    );
+    $old_function = $theme_registry[$theme_name]['function'];
+    $this->assertTrue(isset($theme_registry[$theme_name]));
+    _easy_authcache_override_theme($theme_registry, $dynamic_theme['theme'], $dynamic_theme['mock callback'], $dynamic_theme['callback']);
+    $theme_data = $theme_registry[$theme_name];
+    $this->assertNull($theme_data['function']);
+    $this->assertEqual($old_function, $theme_data[EASY_AUTHCACHE_DEFAULT_THEME_FUNC_KEY]);
+  }
+
+  public function testProcessThemeFunctionApi() {
+    variable_set(EASY_AUTHCACHE_CURRENT_PLUGIN, EASY_AUTHCACHE_TEST_PLUGIN_MOCK);
+    $theme_registry = theme_get_registry();
+    $theme_name = EASY_AUTHCACHE_TEST_THEME_FUNCTION;
+    $dynamic_theme = array(
+      'theme' => $theme_name,
+      'mock callback' => 'testmockcallback',
+      'callback' => 'testcallback',
+    );
+    $this->assertTrue(isset($theme_registry[$theme_name]));
+    _easy_authcache_override_theme($theme_registry, $dynamic_theme['theme'], $dynamic_theme['mock callback'], $dynamic_theme['callback']);
+    _theme_set_registry($theme_registry);
+
+
+    $arg = rand(0, 1000);
+
+    easy_authcache_test_plugin_process_on();
+    $output = theme(EASY_AUTHCACHE_TEST_THEME_FUNCTION, $arg);
+    $this->verbose($output);
+    $this->assertEqual(EASY_AUTHCACHE_TEST_MOCK_REPLACED, $output);
+
+    easy_authcache_test_plugin_process_off();
+    $output = theme(EASY_AUTHCACHE_TEST_THEME_FUNCTION, $arg);
+    $this->verbose($output);
+    $this->assertEqual($arg, $output);
+  }
+}

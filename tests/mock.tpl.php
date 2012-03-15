@@ -1,0 +1,1 @@
+<?php print EASY_AUTHCACHE_TEST_MOCK_REPLACED; ?>

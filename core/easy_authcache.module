@@ -3,7 +3,8 @@
 
 // plugin HOOKS  -----------------------------------------------------------
 
-define('EASY_AUTHCACHE_PLUGIN_HOOK', 'easy_authcache_plugin');
+define('EASY_AUTHCACHE_CURRENT_PLUGIN','easy_authcache_plugin');
+define('EASY_AUTHCACHE_PLUGIN_HOOK', EASY_AUTHCACHE_CURRENT_PLUGIN);
 define('EASY_AUTHCACHE_PLUGIN_THEME_PATH_HOOK', 'easy_authcache_plugin_theme_path');
 define('EASY_AUTHCACHE_PLUGIN_TEMPLATE_NAME_HOOK', 'easy_authcache_plugin_template_name');
 define('EASY_AUTHCACHE_PLUGIN_USE_REPLACE_HOOK', 'easy_authcache_plugin_use_replace');
@@ -55,7 +56,7 @@ function easy_authcache_easy_authcache_config() {
   $plugins = _easy_authcache_get_plugins();
   $current_plugin = _easy_authcache_current_plugin();
   
-  $items['default']['easy_authcache_plugin'] = array(
+  $items['default'][EASY_AUTHCACHE_CURRENT_PLUGIN] = array(
     '#type' => 'radios', 
     '#title' => t('Plugin'), 
     '#default_value' => $current_plugin, 
@@ -168,7 +169,7 @@ function _easy_authcache_get_plugins() {
 
 function _easy_authcache_current_plugin() {
   $plugins = _easy_authcache_get_plugins();
-  $current = variable_get('easy_authcache_plugin', '');
+  $current = variable_get(EASY_AUTHCACHE_CURRENT_PLUGIN, '');
   if (empty($current) && count($current)) {
     $current = array_keys($plugins);
     $current = $current[0];
@@ -200,7 +201,7 @@ function _easy_authcache_get_theme_path() {
  */
 function _easy_authcache_add_theme_registry_last(&$theme_registry, $theme_name, $function_name) {
   if (isset($theme_registry[$theme_name])) {
-    // If cigale_cache_preprocess_page's preprocess function is there already, remove it.
+    // If easyauthcache_cache_preprocess_page's preprocess function is there already, remove it.
     if ($key = array_search($function_name, $theme_registry[$theme_name]['preprocess functions'])) {
       unset($theme_registry[$theme_name]['preprocess functions'][$key]);
     }
@@ -208,4 +209,3 @@ function _easy_authcache_add_theme_registry_last(&$theme_registry, $theme_name, 
     $theme_registry[$theme_name]['preprocess functions'][] = $function_name;
   }
 }
-
