@@ -1,7 +1,5 @@
 <?php
 
-
-
 define('EASY_AUTHCACHE_TEST_THEME_TEMPLATE', 'easy_authcache_test_template');
 define('EASY_AUTHCACHE_TEST_THEME_FUNCTION', 'easy_authcache_test_theme_function');
 
@@ -28,7 +26,7 @@ function theme_easy_authcache_test_theme_function($arg1) {
 define('EASY_AUTHCACHE_TEST_PLUGIN_MOCK', 'easy_authcache_test_plugin_mock');
 define('EASY_AUTHCACHE_TEST_MOCK_REPLACED', 'easy authcache mock replaced');
 
-global $is_ea_mock_plugin;
+$is_ea_mock_plugin = FALSE;
 
 /**
  * Implementation hook_easy_authcache_plugin()
@@ -37,20 +35,26 @@ function easy_authcache_test_easy_authcache_plugin() {
   return array(EASY_AUTHCACHE_TEST_PLUGIN_MOCK => t('Mock'));
 }
 
-function easy_authcache_test_easy_authcache_plugin_theme_path() {
+function easy_authcache_test_plugin_mock_easy_authcache_plugin_theme_path() {
   return '';
 }
 
-function easy_authcache_test_easy_authcache_plugin_template_name() {
+function easy_authcache_test_plugin_mock_easy_authcache_plugin_template_name() {
   return 'mock';
 }
 
-function easy_authcache_test_easy_authcache_plugin_use_replace() {
+function easy_authcache_test_plugin_mock_easy_authcache_plugin_use_replace() {
   global $is_ea_mock_plugin;
   return $is_ea_mock_plugin;
 }
 
-function easy_authcache_test_easy_authcache_plugin_prepare_mock_vars(&$vars, $hash) {
+function easy_authcache_test_plugin_mock_easy_authcache_plugin_prepare_mock_vars(&$vars, $hash) {
+}
+
+function easy_authcache_test_mock_callback(&$vars) {
+  return array(
+      'id' => 1,
+      'params' => array());
 }
 
 function easy_authcache_test_callback($hash) {
@@ -60,6 +64,7 @@ function easy_authcache_test_callback($hash) {
   $result = easy_authcache_get_dynamic_region_html($hash);
   return $result;
 }
+
 
 function easy_authcache_test_plugin_process_on() {
   global $is_ea_mock_plugin;

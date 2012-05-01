@@ -41,8 +41,8 @@ class EasyAuthcacheTestCase extends DrupalWebTestCase {
     $theme_name = EASY_AUTHCACHE_TEST_THEME_TEMPLATE;
     $dynamic_theme = array(
       'theme' => $theme_name,
-      'mock callback' => 'testmockcallback',
-      'callback' => 'testcallback',
+      'mock callback' => 'easy_authcache_test_mock_callback',
+      'callback' => 'easy_authcache_test_callback',
     );
     $path1 = drupal_get_path('module', 'easy_authcache') . '/theme';
     $this->assertTrue(module_exists('easy_authcache_test'));
@@ -61,8 +61,8 @@ class EasyAuthcacheTestCase extends DrupalWebTestCase {
     $theme_name = EASY_AUTHCACHE_TEST_THEME_FUNCTION;
     $dynamic_theme = array(
       'theme' => $theme_name,
-      'mock callback' => 'testmockcallback',
-      'callback' => 'testcallback',
+      'mock callback' => 'easy_authcache_test_mock_callback',
+      'callback' => 'easy_authcache_test_callback',
     );
     $old_function = $theme_registry[$theme_name]['function'];
     $this->assertTrue(isset($theme_registry[$theme_name]));
@@ -72,30 +72,57 @@ class EasyAuthcacheTestCase extends DrupalWebTestCase {
     $this->assertEqual($old_function, $theme_data[EASY_AUTHCACHE_DEFAULT_THEME_FUNC_KEY]);
   }
 
+  public function testProcessTemplateApi() {
+    variable_set(EASY_AUTHCACHE_CURRENT_PLUGIN, EASY_AUTHCACHE_TEST_PLUGIN_MOCK);
+    $theme_registry = theme_get_registry();
+    $theme_name = EASY_AUTHCACHE_TEST_THEME_TEMPLATE;
+    $dynamic_theme = array(
+      'theme' => $theme_name,
+      'mock callback' => 'easy_authcache_test_mock_callback',
+      'callback' => 'easy_authcache_test_callback',
+    );
+
+    $this->assertTrue(isset($theme_registry[$theme_name]));
+    _easy_authcache_override_theme($theme_registry, $dynamic_theme['theme'], $dynamic_theme['mock callback'], $dynamic_theme['callback']);
+    theme_get_registry($theme_registry);
+
+    $arg = rand(0, 1000);
+
+    easy_authcache_test_plugin_process_on();
+    $output = theme($theme_name, $arg);
+    $this->verbose(var_export($output, TRUE));
+    $this->assertEqual(EASY_AUTHCACHE_TEST_MOCK_REPLACED, $output);
+
+    easy_authcache_test_plugin_process_off();
+    $output = theme($theme_name, $arg);
+    $this->verbose(var_export($output, TRUE));
+    $this->assertEqual($arg, $output);
+  }
+
   public function testProcessThemeFunctionApi() {
     variable_set(EASY_AUTHCACHE_CURRENT_PLUGIN, EASY_AUTHCACHE_TEST_PLUGIN_MOCK);
     $theme_registry = theme_get_registry();
     $theme_name = EASY_AUTHCACHE_TEST_THEME_FUNCTION;
     $dynamic_theme = array(
       'theme' => $theme_name,
-      'mock callback' => 'testmockcallback',
-      'callback' => 'testcallback',
+      'mock callback' => 'easy_authcache_test_mock_callback',
+      'callback' => 'easy_authcache_test_callback',
     );
+
     $this->assertTrue(isset($theme_registry[$theme_name]));
     _easy_authcache_override_theme($theme_registry, $dynamic_theme['theme'], $dynamic_theme['mock callback'], $dynamic_theme['callback']);
-    _theme_set_registry($theme_registry);
-
+    theme_get_registry($theme_registry);
 
     $arg = rand(0, 1000);
 
     easy_authcache_test_plugin_process_on();
-    $output = theme(EASY_AUTHCACHE_TEST_THEME_FUNCTION, $arg);
-    $this->verbose($output);
+    $output = theme($theme_name, $arg);
+    $this->verbose(var_export($output, TRUE));
     $this->assertEqual(EASY_AUTHCACHE_TEST_MOCK_REPLACED, $output);
 
     easy_authcache_test_plugin_process_off();
-    $output = theme(EASY_AUTHCACHE_TEST_THEME_FUNCTION, $arg);
-    $this->verbose($output);
+    $output = theme($theme_name, $arg);
+    $this->verbose(var_export($output, TRUE));
     $this->assertEqual($arg, $output);
   }
 }
