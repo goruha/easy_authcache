@@ -2,11 +2,15 @@
 define('EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_VERSION_2_1', '2.1');
 define('EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_VERSION_3_X', '3.x');
 
-define('EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_TTL_UNIT_SECOND', 's');
-define('EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_TTL_UNIT_MINUTE', 'm');
+define('EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_TTL_UNIT_SECOND',  's');
+define('EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_TTL_UNIT_MINUTE',  'm');
+define('EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_TTL_UNIT_HOUR',    'h');
+define('EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_TTL_UNIT_DAY',     'd');
+define('EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_TTL_UNIT_WEEK',    'w');
 
-define('EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_ACTION_CACHE', 'cache');
+define('EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_ACTION_CACHE', 'lookup');
 define('EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_ACTION_PASS', 'pass');
+define('EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_ACTION_PIPE', 'pipe');
 
 /**
  * Implementation of hook_menu()
@@ -44,6 +48,9 @@ function _easy_authcache_vcl_generator_ttl_units() {
   return array(
     EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_TTL_UNIT_SECOND => t('Second(s)'),
     EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_TTL_UNIT_MINUTE => t('Minute(s)'),
+    EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_TTL_UNIT_HOUR => t('Hour(s)'),
+    EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_TTL_UNIT_DAY => t('Day(s)'),
+    EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_TTL_UNIT_WEEK => t('Week(s)'),
   );
 }
 
@@ -52,18 +59,34 @@ function _easy_authcache_vcl_generator_ttl_units() {
  */
 function easy_authcache_vcl_generator_theme() {
   $vcl_args = array(
-
+    'ips' => NULL,
+    'http_auth' => NULL,
+    'http_auth_encode' => NULL,
+    'http_auth_wrong_html' => NULL,
+    'wrong_request_html' => NULL,
+    'backend_error_html' => NULL,
+    'eac_prefix' => NULL,
+    'esi_prefix' => NULL,
+    'esi_path' => NULL,
+    'files_hide' => NULL,
+    'files_show' => NULL,
+    'files_cache' => NULL,
+    'files_cache_action' => NULL,
+    'ulrs_path' => NULL,
+    'cookies_pass' => NULL,
+    'page_ttl' => NULL,
+    'esi_ttl' => NULL,
   );
   return array(
     'easy_authcache_vcl_generator_vcl_2_1_base' => array(
       'arguments' => $vcl_args,
       'file' => 'easy_authcache_vcl_generator.theme.inc',
-      'template' => 'templates/vcl-eac-2-1',
+      'template' => 'templates/vcl-base-2-1',
     ),
     'easy_authcache_vcl_generator_vcl_3_base' => array(
       'arguments' => $vcl_args,
       'file' => 'easy_authcache_vcl_generator.theme.inc',
-      'template' => 'templates/vcl-eac-3',
+      'template' => 'templates/vcl-base-3',
     ),
     'easy_authcache_vcl_generator_vcl_2_1_eac' => array(
       'arguments' => $vcl_args,
@@ -79,13 +102,146 @@ function easy_authcache_vcl_generator_theme() {
 }
 
 function easy_authcache_vcl_generate_base_vcl() {
-  $theme = 'easy_authcache_vcl_generator_vcl_3';
+  $theme = 'easy_authcache_vcl_generator_vcl_3_base';
   $args = array();
   return theme($theme, $args);
 }
 
 function easy_authcache_vcl_generate_eac_vcl() {
-  $theme = 'easy_authcache_vcl_generator_vcl_3';
-  $args = array();
-  return theme($theme, $args);
+  $theme = 'easy_authcache_vcl_generator_vcl_3_eac';
+  $http_auth_name = variable_get('easy_authcache_vcl_use_http_auth_name', '');
+  $http_auth_pass = variable_get('easy_authcache_vcl_use_http_auth_pass', '');
+  $args = array(
+    $theme,
+    easy_authcache_vcl_service_ips(),
+    variable_get('easy_authcache_vcl_use_http_auth', FALSE),
+    base64_encode("$http_auth_name:$http_auth_pass"),
+    easy_authcache_vcl_http_auth_denied_html(),
+    easy_authcache_vcl_bad_request_html(),
+    easy_authcache_vcl_backend_error_html(),
+    EASY_AUTHCACHE_PLUGIN_VARNISH_PAGE_PREFIX,
+    EASY_AUTHCACHE_PLUGIN_VARNISH_ESI_PREFIX,
+    'easy_authcache_plugin_varnish',
+    easy_authcache_vcl_files_hide(),
+    easy_authcache_vcl_files_show(),
+    easy_authcache_vcl_files_cache_list(),
+    easy_authcache_vcl_files_cache_action(),
+    easy_authcache_vcl_urls_to_pass(),
+    easy_authcache_vcl_cookies_to_pass(),
+    easy_authcache_vcl_ttl() . easy_authcache_vcl_ttl_unit(),
+    easy_authcache_vcl_esi_ttl() . easy_authcache_vcl_esi_ttl_unit()
+  );
+  return call_user_func_array('theme', $args);
+}
+
+
+function easy_authcache_vcl_service_ips() {
+  $default = <<<TEXT
+"127.0.0.1";
+"localhost";
+TEXT;
+
+  return variable_get('easy_authcache_vcl_service_ips', $default);
+}
+
+function easy_authcache_vcl_backend_error_html() {
+  $default = <<<HTML
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+ "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+  <head>
+    <title>Internal server error</title>
+  </head>
+  <body>
+    <h1>Internal server error</h1>
+  </body>
+</html>
+HTML;
+
+  return variable_get('easy_authcache_vcl_backend_error_html', $default);
+}
+
+
+function easy_authcache_vcl_http_auth_denied_html() {
+  $default = <<<HTML
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+ "http://www.w3.org/TR/1999/REC-html401-19991224/loose.dtd">
+<HTML>
+  <HEAD>
+    <TITLE>Error</TITLE>
+    <META HTTP-EQUIV='Content-Type' CONTENT='text/html;'>
+  </HEAD>
+  <BODY><H1>401 Unauthorized (varnish).</H1></BODY>
+</HTML>
+HTML;
+
+  return variable_get('easy_authcache_vcl_http_auth_denied_html', $default);
+}
+
+function easy_authcache_vcl_bad_request_html() {
+  $default = <<<HTML
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+ "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+  <head>
+    <title>400 Bad request</title>
+  </head>
+  <body>
+    <h1>Error 400 Bad request</h1>
+    <p>Bad request</p>
+  </body>
+</html>
+HTML;
+
+  return variable_get('easy_authcache_vcl_bad_request_html', $default);
+}
+
+
+function easy_authcache_vcl_files_cache_action() {
+  return variable_get('easy_authcache_vcl_files_cache_action', EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_ACTION_CACHE);
+}
+
+function easy_authcache_vcl_files_cache_list() {
+  return variable_get('easy_authcache_vcl_files_cache_list', '(?i)\.(jpeg|jpg|png|gif|ico|swf|js|css|txt|html|htm|pdf|tar|gz|gzip|bz2)(\?.*|)$');
+}
+
+function easy_authcache_vcl_files_hide() {
+  return variable_get('easy_authcache_vcl_files_hide', '(?i)\.(module|info|inc|profile|engine|test|po|txt|theme|svn|git|tpl(\.php)?)(\?.*|)$');
+}
+
+function easy_authcache_vcl_files_show() {
+  return variable_get('easy_authcache_vcl_files_show', '(?i)robots\.txt');
+}
+
+
+function easy_authcache_vcl_urls_to_pass() {
+  $default = <<<HTML
+^/user
+^/admin
+^/logout
+HTML;
+
+  return variable_get('easy_authcache_vcl_urls_to_pass', $default);
+}
+
+
+function easy_authcache_vcl_ttl() {
+  return variable_get('easy_authcache_vcl_ttl', '60');
+}
+
+function easy_authcache_vcl_ttl_unit() {
+  return variable_get('easy_authcache_vcl_ttl_unit', EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_TTL_UNIT_MINUTE);
+}
+
+function easy_authcache_vcl_cookies_to_pass() {
+  return variable_get('easy_authcache_vcl_cookies_to_pass', 'drupal_uid|SESS[a-z0-9]+');
+}
+
+
+function easy_authcache_vcl_esi_ttl_unit() {
+  return variable_get('easy_authcache_vcl_esi_ttl_unit', EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_TTL_UNIT_MINUTE);
+}
+
+function easy_authcache_vcl_esi_ttl() {
+  return variable_get('easy_authcache_vcl_esi_ttl', '10');
 }

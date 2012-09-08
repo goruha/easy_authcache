@@ -1,12 +1,3 @@
-<?php
-/**
- * Created by JetBrains PhpStorm.
- * User: goruha
- * Date: 9/9/12
- * Time: 1:48 AM
- * To change this template use File | Settings | File Templates.
- */
-
 backend default {
 	.host = "127.0.0.1";
 	.port = "80";
@@ -68,8 +59,7 @@ sub vcl_recv {
 	}
 
 	call eac_protected_recv;
-	call eac_static_cache_recv;
-	call eac_static_pass_recv;
+	call eac_static_recv;
 	call eac_urls_pass_recv;
 	call eac_cookie_pass_recv;
 
