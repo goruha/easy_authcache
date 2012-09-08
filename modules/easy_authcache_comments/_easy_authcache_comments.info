@@ -3,5 +3,5 @@ name = Easy authcache comments
 description = Implement Easy authcache api to get comments with ajax
 dependencies[] = easy_authcache
 dependencies[] = comment
-core = 6.x
+core = 7.x
 package = Caching

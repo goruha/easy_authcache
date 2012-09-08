@@ -3,4 +3,4 @@ name = Easy Authcache Tests
 description = Easy authcache unit tests
 dependencies[] = easy_authcache
 package = Caching
-core = "6.x"
+core = "7.x"
