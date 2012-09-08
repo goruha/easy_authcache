@@ -23,7 +23,7 @@ define('EASY_AUTHCACHE_THEME_NAME_KEY', 'easy_authcache_theme_name');
 define('EASY_AUTHCACHE_DEFAULT_THEME_FUNC_KEY', 'easy_authcache_theme_default_function');
 define('EASY_AUTHCACHE_PARAMS_CACHE_PREFIX', 'easy_authcache_params');
 
-
+define('EASY_AUTHCACHE_CACHE_PREFIX', 'easy_authcache');
 
 /**
  * @file
