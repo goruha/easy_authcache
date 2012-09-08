@@ -60,6 +60,7 @@ sub vcl_recv {
 
 	call eac_protected_recv;
 	call eac_static_recv;
+	call eac_pass_cache_recv;
 	call eac_urls_pass_recv;
 	call eac_cookie_pass_recv;
 

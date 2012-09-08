@@ -87,6 +87,19 @@ sub eac_static_recv {
 	}
 }
 
+
+
+sub eac_pass_cache_recv {
+	if (req.url ~ "^/esi/") {
+		return(pass);
+	}
+	if (!req.url ~ "^/esi/") {
+		return(pass);
+	}
+}
+
+
+
 sub eac_urls_pass_recv {
 	if (<?php print $ulrs_path?>) {
 		return(pass);
