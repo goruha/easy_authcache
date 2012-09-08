@@ -2,4 +2,4 @@
 name = Easy Authcache
 description = Provide API for easy authcache implemantation
 package = Caching
-core = "6.x"
+core = "7.x"

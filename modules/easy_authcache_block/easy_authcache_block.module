@@ -73,8 +73,12 @@ function easy_authcache_block_admin_configure_submit($form, &$form_state) {
  *
  */
 function _easy_authcache_block_block_settings_get_variable($module, $delta) {
-  $sql = "SELECT use_ajax, just_run FROM {easy_authcache_blocks} WHERE module = '%s' AND delta = '%s'";
-  $result = db_fetch_array(db_query($sql, $module, $delta));
+  $result = db_select('easy_authcache_blocks')
+    ->fields('easy_authcache_blocks', array('use_ajax', 'just_run'))
+    ->condition('module', $module, '=')
+    ->condition('delta', $delta, '=')
+    ->execute()
+    ->fetchAssoc();
   return $result;
 }
 
@@ -88,11 +92,20 @@ function _easy_authcache_block_block_settings_get_variable($module, $delta) {
  *
  */
 function _easy_authcache_block_block_settings_set_variable($module, $delta, $value) {
-  $sql = "DELETE FROM {easy_authcache_blocks} WHERE module = '%s' AND delta = '%s'";
-  db_query($sql, $module, $delta);
-  $sql = "INSERT INTO {easy_authcache_blocks} (module, delta, block_id, use_ajax, just_run) VALUES ('%s', '%s', '%s', %d, %d)";
+  db_delete('easy_authcache_blocks')
+    ->condition('module', $module, '=')
+    ->condition('delta', $delta, '=')
+    ->execute();
   $block_id = _easy_authcache_block_block_id($module, $delta);
-  db_query($sql, $module, $delta, $block_id, $value['use_ajax'], $value['just_run']);
+  db_insert('easy_authcache_blocks')
+    ->fields(array(
+      'module' => $module,
+      'delta' => $delta,
+      'block_id' => $block_id,
+      'use_ajax' => $value['use_ajax'],
+      'just_run' => $value['just_run'],
+    ))
+    ->execute();
 }
 
 /**
@@ -162,21 +175,36 @@ function easy_authcache_block_callback($data) {
   
   // Get current user roles
   $rids = array_keys($user->roles);
-  
+
+  $query = db_select('blocks', 'b');
+  $query->join('easy_authcache_blocks', 'ccb', 'ccb.module = b.module AND ccb.delta = b.delta');
+  $query->leftJoin('blocks_roles', 'r', 'b.module = r.module AND b.delta = r.delta');
+  $block = $query
+    ->fields('b')
+    ->fields('ccb', array('block_id'))
+    ->condition('ccb.block_id', $block_id)
+    ->condition('b.theme', $theme_key)
+    ->condition(db_or()
+      ->condition('r.rid', $rids, 'IN')
+      ->isNull('r.rid'))
+    ->range(0,1)
+    ->execute()
+    ->fetchObject();
+
+  /*
   $sql = "SELECT DISTINCT b.*, ccb.block_id  FROM  {blocks} b
     JOIN {easy_authcache_blocks} ccb ON ccb.module = b.module AND ccb.delta = b.delta AND b.theme = '%s'
     LEFT JOIN {blocks_roles} r ON b.module = r.module AND b.delta = r.delta
     WHERE (r.rid IN (" . db_placeholders($rids) . ") OR r.rid IS NULL) AND ccb.block_id = '%s' LIMIT 0,1";
   // we need to add  b.status = 1 AND for sites used with out context
-  
-
 
   $sql = db_rewrite_sql($sql, 'b', 'bid');
   // Get blocks
   $result = db_query($sql, array_merge(array($theme_key), $rids, array($block_id)));
   // Fill blocks array
   $block = db_fetch_object($result);
-  
+  */
+
   // Process each block
   $block->region = $data['region'];
 

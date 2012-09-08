@@ -3,5 +3,5 @@ name = Easy authcache plugin authcache
 description = Implement authcache for dynamic regions
 dependencies[] = easy_authcache
 dependencies[] = authcache
-core = 6.x
+core = 7.x
 package = Caching
