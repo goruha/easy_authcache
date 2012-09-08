@@ -45,7 +45,7 @@ function easy_authcache_plugin_varnish_menu() {
     'page callback' => 'easy_authcache_plugin_varnish_callback',
     'page arguments' => array(1),
     'access callback' => TRUE,
-    'type' => MENU_CALLBACK  
+    'type' => MENU_CALLBACK
   );
   return $items;
 }
@@ -61,3 +61,91 @@ function easy_authcache_plugin_varnish_callback($hash) {
 function easy_authcache_plugin_varnish_perm() {
   return array('debug easy authcache varnish');
 }
+
+// EAC Varnish cookies roles split manage
+
+
+/**
+ * Implementation of hook_user.
+ *   For maximum cache-efficiency, the proxy must be able to identify the roles
+ *   held by a user.  A cookie is used which provides a consistent hash for
+ *   all users who share the same roles.
+ *   For security, the hash uses a random seed which is rotated (by hook_cron)
+ *   at regular intervals - defaults to daily.
+ */
+function easy_authcache_plugin_varnish_user($op, &$edit, &$account, $category = NULL) {
+  // only respond to login/logout.
+  if(!($op == 'login' || $op == 'logout')) {
+    return;
+  }
+
+  // Drupal session cookies use the name 'SESS' followed by an MD5 hash.
+  // The role-cookie is the same, prefixes with the letter 'EAC'.
+  $cookie = array('name' => 'EAC' . session_name());
+
+  if($op == 'login') {
+    $hash = _easy_authcache_plugin_varnish_get_roles_hash(array_keys($account->roles));
+    $session_options = session_get_cookie_params();
+    $life_time = $session_options['lifetime'];
+    $cookie += array(
+      'value' => $hash,
+      'expire' => time() + $life_time,
+    );
+  }
+  else {
+    $cookie += array(
+      'value' => 'deleted',
+      'expire' => 1,
+    );
+  }
+  setcookie($cookie['name'], $cookie['value'], $cookie['expire'], '/');
+}
+
+/**
+ * Get the hash for a set of roles.
+ *
+ * @param array $rids
+ *   An array of role-ids
+ */
+function _easy_authcache_plugin_varnish_get_roles_hash($rids) {
+  $seed = _easy_authcache_plugin_varnish_get_seed_key();
+  $hash = implode(':', $rids);
+  $hash = md5($seed . md5($hash));
+  return $hash;
+}
+
+/**
+ * Get the current seed key.
+ */
+function _easy_authcache_plugin_varnish_get_seed_key() {
+  $seed = variable_get('easy_authcache_plugin_varnish_seed_key', FALSE);
+  if(!$seed) {
+    $seed = _easy_authcache_plugin_varnish_rotate_seed_key();
+  }
+  return $seed;
+}
+
+/**
+ * Rotate the seed key.
+ */
+function _easy_authcache_plugin_varnish_rotate_seed_key() {
+  $seed = _easy_authcache_plugin_varnish_get_random_seed();
+  variable_set('easy_authcache_plugin_varnish_seed_key', $seed);
+  variable_set('easy_authcache_plugin_varnish_seed_key_last_changed', time());
+  return $seed;
+}
+
+/**
+ * Get a random 32-character string
+ */
+function _easy_authcache_plugin_varnish_get_random_seed() {
+  $seed = '';
+  for($i=0; $i<32; $i++) {
+    // get a random character from the printable ASCII character set: 32-176
+    $seed += chr(mt_rand(32, 176));
+  }
+  return $seed;
+}
+
+
+
