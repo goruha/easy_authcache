@@ -25,7 +25,7 @@ function easy_authcache_vcl_generator_form() {
     '#type' => 'radios',
     '#title' => t('Varnish version'),
     '#description' => t('Select varnish version you use'),
-    '#default_value' => variable_get('easy_authcache_vcl_varnish_version', EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_VERSION_3_X),
+    '#default_value' => easy_authcache_vcl_varnish_version(),
     '#options' => $varnish_versions_supported,
   );
 
@@ -191,7 +191,8 @@ function easy_authcache_vcl_generator_form() {
     '#default_value' => easy_authcache_vcl_bad_request_html(),
   );
 
-  return system_settings_form($form);
+  $form = system_settings_form($form);
+  return $form;
 }
 
 function easy_authcache_vcl_generate() {
@@ -210,4 +211,33 @@ function easy_authcache_vcl_generate() {
   );
 
   return $items;
+}
+
+function easy_authcache_vcl_get($type) {
+  $content = '';
+  switch ($type) {
+    case 'default':
+      $content = easy_authcache_vcl_generate_base_vcl();
+      break;
+
+    case 'eac':
+      $content = easy_authcache_vcl_generate_eac_vcl();
+      break;
+  }
+  if ($content) {
+    $headers = array(
+      'Content-Type: ' . 'application/octet-stream',
+      'Content-Length: ' . strlen($content),
+      'Content-Disposition: inline; filename="' . $type . '.vcl"',
+      'Content-Transfer-Encoding: binary',
+      'Accept-Ranges: bytes',
+      'Cache-Control: private',
+      'Pragma: private',
+    );
+    foreach ($headers as $header) {
+      drupal_set_header($header);
+    }
+    print $content;
+    die();
+  }
 }

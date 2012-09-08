@@ -65,7 +65,8 @@ function easy_authcache_plugin_varnish_callback($hash) {
   $is_varnish = FALSE;
   // @TODO: Add user login for case we remove cookie in varnish
   $result = easy_authcache_get_dynamic_region_html($hash);
-  return $result;
+  print $result;
+  die();
 }
 
 function easy_authcache_plugin_varnish_perm() {

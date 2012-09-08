@@ -40,6 +40,28 @@ function easy_authcache_vcl_generator_menu() {
     'weight' => 30,
   );
 
+  $items['admin/settings/performance/vcl/get/default'] = array(
+    'title' => 'Get VCL',
+    'page callback' => 'easy_authcache_vcl_get',
+    'page arguments' => array(5),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'easy_authcache_vcl.admin.inc',
+    'type' => MENU_CALLBACK,
+    'weight' => 30,
+  );
+
+
+  $items['admin/settings/performance/vcl/get/eac'] = array(
+    'title' => 'Get VCL',
+    'page callback' => 'easy_authcache_vcl_get',
+    'page arguments' => array(5),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'easy_authcache_vcl.admin.inc',
+    'type' => MENU_CALLBACK,
+    'weight' => 30,
+  );
+
+
 
   return $items;
 }
@@ -104,13 +126,15 @@ function easy_authcache_vcl_generator_theme() {
 }
 
 function easy_authcache_vcl_generate_base_vcl() {
-  $theme = 'easy_authcache_vcl_generator_vcl_3_base';
+  $version = easy_authcache_vcl_varnish_version();
+  $theme = $version == EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_VERSION_3_X ? 'easy_authcache_vcl_generator_vcl_3_base' : 'easy_authcache_vcl_generator_vcl_2_1_base';
   $args = array();
   return theme($theme, $args);
 }
 
 function easy_authcache_vcl_generate_eac_vcl() {
-  $theme = 'easy_authcache_vcl_generator_vcl_3_eac';
+  $version = easy_authcache_vcl_varnish_version();
+  $theme = $version == EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_VERSION_3_X ? 'easy_authcache_vcl_generator_vcl_3_eac' : 'easy_authcache_vcl_generator_vcl_2_1_eac';
   $http_auth_name = variable_get('easy_authcache_vcl_use_http_auth_name', '');
   $http_auth_pass = variable_get('easy_authcache_vcl_use_http_auth_pass', '');
   $args = array(
@@ -248,4 +272,8 @@ function easy_authcache_vcl_esi_ttl_unit() {
 
 function easy_authcache_vcl_esi_ttl() {
   return variable_get('easy_authcache_vcl_esi_ttl', '10');
+}
+
+function easy_authcache_vcl_varnish_version() {
+  return variable_get('easy_authcache_vcl_varnish_version', EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_VERSION_3_X);
 }
