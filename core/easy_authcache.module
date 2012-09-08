@@ -95,9 +95,10 @@ function _easy_authcache_override_theme(&$theme_registry, $theme_name, $mock_cal
   
   // store callbacks
   $theme_data = &$theme_registry[$theme_name];
+  // dpm($theme_data);
   $theme_data[EASY_AUTHCACHE_MOCK_CALLBACK_KEY] = $mock_callback;
   $theme_data[EASY_AUTHCACHE_CALLBACK_KEY] = $callback;
-  $theme_data['arguments'][EASY_AUTHCACHE_THEME_NAME_KEY] = $theme_name;
+  $theme_data['variables'][EASY_AUTHCACHE_THEME_NAME_KEY] = $theme_name;
   
   if (isset($theme_data['function']) && ! empty($theme_data['function'])) {
     // save function callback in theme registry
@@ -112,6 +113,7 @@ function _easy_authcache_override_theme(&$theme_registry, $theme_name, $mock_cal
 }
 
 function _easy_authcache_theme_callback(&$vars) {
+  // dpm($vars);
   $hooks = theme_get_registry();
   $theme_name = $vars[EASY_AUTHCACHE_THEME_NAME_KEY];
   $theme_data = $hooks[$theme_name];
@@ -145,7 +147,7 @@ function _easy_authcache_apply_mock_theme(&$vars, $theme_data) {
 function _easy_authcache_call_default_theme_function(&$vars, $theme_data) {
   $function = $theme_data['easy_authcache_theme_default_function'];
   $params = array();
-  foreach ($theme_data['arguments'] as $key => $value) {
+  foreach ($theme_data['variables'] as $key => $value) {
     $params[$key] = isset($vars[$key]) ? $vars[$key] : $value;
   }
   $vars['output'] = call_user_func_array($function, $params);
@@ -172,7 +174,9 @@ function _easy_authcache_current_plugin() {
   $current = variable_get(EASY_AUTHCACHE_CURRENT_PLUGIN, '');
   if (empty($current) && count($current)) {
     $current = array_keys($plugins);
-    $current = $current[0];
+    // @TODO dumping the plugins temporarily
+    // $current = $current[0];
+    $current = '';
   }
   return $current;
 }
