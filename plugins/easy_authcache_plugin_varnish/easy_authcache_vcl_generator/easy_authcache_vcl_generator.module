@@ -76,6 +76,8 @@ function easy_authcache_vcl_generator_theme() {
     'cookies_pass' => NULL,
     'page_ttl' => NULL,
     'esi_ttl' => NULL,
+    'page_cache_rule' => NULL,
+    'esi_cache_rule' => NULL,
   );
   return array(
     'easy_authcache_vcl_generator_vcl_2_1_base' => array(
@@ -129,7 +131,9 @@ function easy_authcache_vcl_generate_eac_vcl() {
     easy_authcache_vcl_urls_to_pass(),
     easy_authcache_vcl_cookies_to_pass(),
     easy_authcache_vcl_ttl() . easy_authcache_vcl_ttl_unit(),
-    easy_authcache_vcl_esi_ttl() . easy_authcache_vcl_esi_ttl_unit()
+    easy_authcache_vcl_esi_ttl() . easy_authcache_vcl_esi_ttl_unit(),
+    easy_authcache_plugin_varnish_page_cache_rule(),
+    easy_authcache_plugin_varnish_esi_cache_rule(),
   );
   return call_user_func_array('theme', $args);
 }

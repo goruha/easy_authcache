@@ -90,12 +90,16 @@ sub eac_static_recv {
 
 
 sub eac_pass_cache_recv {
-	if (req.url ~ "^/esi/") {
+  <?php if ($page_cache_rule == EASY_AUTHCACHE_PLUGIN_VARNISH_CACHE_NONE) : ?>
+	if (req.url ~ "^/<?php print $esi_path; ?>/") {
 		return(pass);
 	}
-	if (!req.url ~ "^/esi/") {
+  <?php endif; ?>
+  <?php if ($esi_cache_rule == EASY_AUTHCACHE_PLUGIN_VARNISH_CACHE_NONE) : ?>
+	if (!req.url ~ "^/<?php print $esi_path; ?>/") {
 		return(pass);
 	}
+  <?php endif; ?>
 }
 
 
