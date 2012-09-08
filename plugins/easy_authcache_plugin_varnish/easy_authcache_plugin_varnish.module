@@ -70,6 +70,8 @@ function easy_authcache_plugin_varnish_menu() {
 function easy_authcache_plugin_varnish_callback($hash, $current_url) {
   global $is_varnish;
   $is_varnish = FALSE;
+  $current_url = base64_decode(arg(2));
+  easy_authcache_plugin_varnish_set_current_url($current_url);
   // @TODO: Add user login for case we remove cookie in varnish
   $result = easy_authcache_get_dynamic_region_html($hash);
   print $result;
@@ -225,4 +227,25 @@ function easy_authcache_plugin_varnish_esi_cache_rule() {
 
 function easy_authcache_plugin_varnish_page_cache_rule() {
   return variable_get('easy_authcache_plugin_varnish_page_rule', EASY_AUTHCACHE_PLUGIN_VARNISH_CACHE_ROLEBASED);
+}
+
+function easy_authcache_plugin_varnish_set_current_url($url) { // Parse getted current url and set q and other values to global array
+// to make drupal think that current request was from that url
+  $url_parts = parse_url($url);
+  $_SERVER['REQUEST_URI'] = preg_replace("/[-a-zA-Z0-9@:%_\+.~#?&\/\/=]{2,256}\.[a-z]{2,4}\)?/i", '', $url);
+  $_GET['q'] = ltrim(urldecode($url_parts['path']), '/');
+  $params = array();
+  if (isset($url_parts['query'])) {
+    foreach (explode('&', $url_parts['query']) as $param) {
+      $key_value = explode('=', $param);
+      $params[$key_value[0]] = urldecode($key_value[1]);
+    }
+  }
+
+// For some links that use destination we should back to current page
+  if (isset($params['destination'])) {
+    $destination = ltrim($_GET['q'], '/') . '?' . drupal_authcache_query_string_encode($params);
+    $_REQUEST['destination'] = urlencode($destination);
+  }
+  $_GET = array_merge($_GET, $params);
 }
