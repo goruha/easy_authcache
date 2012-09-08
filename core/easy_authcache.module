@@ -30,7 +30,7 @@ define('EASY_AUTHCACHE_CACHE_PREFIX', 'easy_authcache');
  * Authcache and dynamic content integration
  */
 
-// HOOKS ----------------e-------------------------------------------
+// HOOKS -----------------------------------------------------------
 
 /**
  * Implementation hook_theme_registry_alter()
