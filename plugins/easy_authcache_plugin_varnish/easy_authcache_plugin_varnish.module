@@ -41,7 +41,14 @@ function easy_authcache_plugin_varnish_easy_authcache_plugin_use_replace() {
 }
 
 function easy_authcache_plugin_varnish_easy_authcache_plugin_prepare_mock_vars(&$vars, $hash) {
-  $path = url("easy_authcache_plugin_varnish/$hash", array('absolute' => TRUE));
+  // Use $_GET here to retrieve the original path in source form.
+  $current_path = isset($_GET['q']) ? $_GET['q'] : '';
+  $query = drupal_query_string_encode($_GET, array('q'));
+  if ($query != '') {
+    $current_path .= '?'. $query;
+  }
+  $current_path = base64_encode($current_path);
+  $path = url("easy_authcache_plugin_varnish/$hash/$current_path", array('absolute' => TRUE));
   if (user_access('debug easy authcache varnish')) {
     $vars['debug'] = l($path ,$path, array('external' => TRUE));
   }
@@ -53,14 +60,14 @@ function easy_authcache_plugin_varnish_menu() {
   $items['easy_authcache_plugin_varnish/%'] = array(
     'title' => 'Easy authcache plugin varnish callback',
     'page callback' => 'easy_authcache_plugin_varnish_callback',
-    'page arguments' => array(1),
+    'page arguments' => array(1, 2),
     'access callback' => TRUE,
     'type' => MENU_CALLBACK
   );
   return $items;
 }
 
-function easy_authcache_plugin_varnish_callback($hash) {
+function easy_authcache_plugin_varnish_callback($hash, $current_url) {
   global $is_varnish;
   $is_varnish = FALSE;
   // @TODO: Add user login for case we remove cookie in varnish
