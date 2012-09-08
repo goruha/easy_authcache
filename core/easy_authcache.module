@@ -95,6 +95,7 @@ function _easy_authcache_override_theme(&$theme_registry, $theme_name, $mock_cal
   
   // store callbacks
   $theme_data = &$theme_registry[$theme_name];
+  // dpm($theme_data);
   $theme_data[EASY_AUTHCACHE_MOCK_CALLBACK_KEY] = $mock_callback;
   $theme_data[EASY_AUTHCACHE_CALLBACK_KEY] = $callback;
   $theme_data['variables'][EASY_AUTHCACHE_THEME_NAME_KEY] = $theme_name;
@@ -112,6 +113,7 @@ function _easy_authcache_override_theme(&$theme_registry, $theme_name, $mock_cal
 }
 
 function _easy_authcache_theme_callback(&$vars) {
+  // dpm($vars);
   $hooks = theme_get_registry();
   $theme_name = $vars[EASY_AUTHCACHE_THEME_NAME_KEY];
   $theme_data = $hooks[$theme_name];
