@@ -91,8 +91,8 @@ function easy_authcache_plugin_varnish_user($op, &$edit, &$account, $category = 
 
   // Drupal session cookies use the name 'SESS' followed by an MD5 hash.
   // The role-cookie is the same, prefixes with the letter 'EAC'.
-  _easy_authcache_set_cookie(EASY_AUTHCACHE_PLUGIN_VARNISH_PAGE_PREFIX, _easy_authcache_plugin_varnish_page_cache_rule(), $account,  $op == 'logout');
-  _easy_authcache_set_cookie(EASY_AUTHCACHE_PLUGIN_VARNISH_ESI_PREFIX, _easy_authcache_plugin_varnish_esi_cache_rule(), $account,  $op == 'logout');
+  _easy_authcache_set_cookie(EASY_AUTHCACHE_PLUGIN_VARNISH_PAGE_PREFIX, easy_authcache_plugin_varnish_page_cache_rule(), $account,  $op == 'logout');
+  _easy_authcache_set_cookie(EASY_AUTHCACHE_PLUGIN_VARNISH_ESI_PREFIX, easy_authcache_plugin_varnish_esi_cache_rule(), $account,  $op == 'logout');
 }
 
 function _easy_authcache_set_cookie($prefix, $rule, $account, $delete = FALSE) {
@@ -196,7 +196,7 @@ function easy_authcache_plugin_varnish_easy_authcache_config() {
     '#type' => 'radios',
     '#title' => t('Page cache rule'),
     '#description' => t('Rule to split cache for page'),
-    '#default_value' => _easy_authcache_plugin_varnish_page_cache_rule(),
+    '#default_value' => easy_authcache_plugin_varnish_page_cache_rule(),
     '#options' => $cache_options,
   );
 
@@ -204,17 +204,17 @@ function easy_authcache_plugin_varnish_easy_authcache_config() {
     '#type' => 'radios',
     '#title' => t('ESI cache rule'),
     '#description' => t('Rule to split cache for esi regions'),
-    '#default_value' => _easy_authcache_plugin_varnish_esi_cache_rule(),
+    '#default_value' => easy_authcache_plugin_varnish_esi_cache_rule(),
     '#options' => $cache_options,
   );
 
   return $items;
 }
 
-function _easy_authcache_plugin_varnish_esi_cache_rule() {
+function easy_authcache_plugin_varnish_esi_cache_rule() {
   return variable_get('easy_authcache_plugin_varnish_esi_rule', EASY_AUTHCACHE_PLUGIN_VARNISH_CACHE_ROLEBASED);
 }
 
-function _easy_authcache_plugin_varnish_page_cache_rule() {
+function easy_authcache_plugin_varnish_page_cache_rule() {
   return variable_get('easy_authcache_plugin_varnish_page_rule', EASY_AUTHCACHE_PLUGIN_VARNISH_CACHE_ROLEBASED);
 }

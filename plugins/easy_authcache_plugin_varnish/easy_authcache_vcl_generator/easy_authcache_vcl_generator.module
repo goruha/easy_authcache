@@ -2,6 +2,11 @@
 define('EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_VERSION_2_1', '2.1');
 define('EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_VERSION_3_X', '3.x');
 
+define('EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_TTL_UNIT_SECOND', 's');
+define('EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_TTL_UNIT_MINUTE', 'm');
+
+define('EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_ACTION_CACHE', 'cache');
+define('EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_ACTION_PASS', 'pass');
 
 /**
  * Implementation of hook_menu()
@@ -20,7 +25,67 @@ function easy_authcache_vcl_generator_menu() {
     'weight' => 30,
   );
 
+  $items['admin/settings/performance/vcl/get'] = array(
+    'title' => 'Get VCL',
+    'description' => "Get VCL.",
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('easy_authcache_vcl_generate'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'easy_authcache_vcl.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 30,
+  );
+
+
   return $items;
 }
 
+function _easy_authcache_vcl_generator_ttl_units() {
+  return array(
+    EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_TTL_UNIT_SECOND => t('Second(s)'),
+    EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_TTL_UNIT_MINUTE => t('Minute(s)'),
+  );
+}
 
+/**
+ * Implementation of hook_theme
+ */
+function easy_authcache_vcl_generator_theme() {
+  $vcl_args = array(
+
+  );
+  return array(
+    'easy_authcache_vcl_generator_vcl_2_1_base' => array(
+      'arguments' => $vcl_args,
+      'file' => 'easy_authcache_vcl_generator.theme.inc',
+      'template' => 'templates/vcl-eac-2-1',
+    ),
+    'easy_authcache_vcl_generator_vcl_3_base' => array(
+      'arguments' => $vcl_args,
+      'file' => 'easy_authcache_vcl_generator.theme.inc',
+      'template' => 'templates/vcl-eac-3',
+    ),
+    'easy_authcache_vcl_generator_vcl_2_1_eac' => array(
+      'arguments' => $vcl_args,
+      'file' => 'easy_authcache_vcl_generator.theme.inc',
+      'template' => 'templates/vcl-eac-2-1',
+    ),
+    'easy_authcache_vcl_generator_vcl_3_eac' => array(
+      'arguments' => $vcl_args,
+      'file' => 'easy_authcache_vcl_generator.theme.inc',
+      'template' => 'templates/vcl-eac-3',
+    ),
+  );
+}
+
+function easy_authcache_vcl_generate_base_vcl() {
+  $theme = 'easy_authcache_vcl_generator_vcl_3';
+  $args = array();
+  return theme($theme, $args);
+}
+
+function easy_authcache_vcl_generate_eac_vcl() {
+  $theme = 'easy_authcache_vcl_generator_vcl_3';
+  $args = array();
+  return theme($theme, $args);
+}
