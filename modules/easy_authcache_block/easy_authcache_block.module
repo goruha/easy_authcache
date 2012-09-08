@@ -175,7 +175,24 @@ function easy_authcache_block_callback($data) {
   
   // Get current user roles
   $rids = array_keys($user->roles);
-  
+
+  /*
+    $query = db_select('blocks', 'b');
+    $query->join('easy_authcache_blocks', 'ccb', 'ccb.module = b.module AND ccb.delta = b.delta');
+    $query->leftJoin('blocks_roles', 'r', 'b.module = r.module AND b.delta = r.delta');
+    $block = $query
+      ->fields('b')
+      ->fields('ccb', array('block_id'))
+      ->condition('ccb.block_id', $block_id)
+      ->condition('b.theme', $theme_key)
+      ->condition(db_or()
+        ->condition('r.rid', $rids, 'IN')
+        ->isNull('r.rid'))
+      ->range(0,1)
+      ->execute()
+      ->fetchObject();
+  */
+
   $sql = "SELECT DISTINCT b.*, ccb.block_id  FROM  {blocks} b
     JOIN {easy_authcache_blocks} ccb ON ccb.module = b.module AND ccb.delta = b.delta AND b.theme = '%s'
     LEFT JOIN {blocks_roles} r ON b.module = r.module AND b.delta = r.delta
