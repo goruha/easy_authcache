@@ -3,4 +3,4 @@ name = Easy Authcache UI
 description = Provide User interface for Easy Authcache
 dependencies[] = easy_authcache
 package = Caching
-core = "7.x"
+core = "6.x"
