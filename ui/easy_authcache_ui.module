@@ -11,7 +11,7 @@
 function easy_authcache_ui_menu() {
   $items = array();
 
-  $items['admin/settings/performance/authcache/easyauthcache'] = array(
+  $items['admin/settings/performance/easyauthcache'] = array(
     'title' => 'Easy Authcache settings',
     'description' => "Configure easy authcache settings.",
     'page callback' => 'drupal_get_form',
@@ -23,4 +23,14 @@ function easy_authcache_ui_menu() {
   );
 
   return $items;
+}
+
+/**
+ * Set drupal performance config page as default tab
+ * @param $menu
+ */
+function easy_authcache_ui_menu_alter(&$menu) {
+  $menu['admin/settings/performance']['type'] = MENU_NORMAL_ITEM;
+  $menu['admin/settings/performance/global'] = $menu['admin/settings/performance'];
+  $menu['admin/settings/performance/global']['type'] = MENU_DEFAULT_LOCAL_TASK;
 }

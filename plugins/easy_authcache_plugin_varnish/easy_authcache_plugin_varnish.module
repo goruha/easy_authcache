@@ -1,5 +1,15 @@
 <?php
+
 define('EASY_AUTHCACHE_PLUGIN_VARNISH', 'easy_authcache_plugin_varnish');
+
+define('EASY_AUTHCACHE_PLUGIN_VARNISH_CACHE_NONE', 0);
+define('EASY_AUTHCACHE_PLUGIN_VARNISH_CACHE_ALL', 1);
+define('EASY_AUTHCACHE_PLUGIN_VARNISH_CACHE_ROLEBASED', 2);
+define('EASY_AUTHCACHE_PLUGIN_VARNISH_CACHE_USERBASED', 3);
+
+define('EASY_AUTHCACHE_PLUGIN_VARNISH_PAGE_PREFIX', 'EAC');
+define('EASY_AUTHCACHE_PLUGIN_VARNISH_ESI_PREFIX', 'EACESI');
+
 global $is_varnish;
 
 /**
@@ -81,24 +91,35 @@ function easy_authcache_plugin_varnish_user($op, &$edit, &$account, $category = 
 
   // Drupal session cookies use the name 'SESS' followed by an MD5 hash.
   // The role-cookie is the same, prefixes with the letter 'EAC'.
-  $cookie = array('name' => 'EAC' . session_name());
+  _easy_authcache_set_cookie(EASY_AUTHCACHE_PLUGIN_VARNISH_PAGE_PREFIX, _easy_authcache_plugin_varnish_page_cache_rule(), $account,  $op == 'logout');
+  _easy_authcache_set_cookie(EASY_AUTHCACHE_PLUGIN_VARNISH_ESI_PREFIX, _easy_authcache_plugin_varnish_esi_cache_rule(), $account,  $op == 'logout');
+}
 
-  if($op == 'login') {
-    $hash = _easy_authcache_plugin_varnish_get_roles_hash(array_keys($account->roles));
-    $session_options = session_get_cookie_params();
-    $life_time = $session_options['lifetime'];
-    $cookie += array(
-      'value' => $hash,
-      'expire' => time() + $life_time,
-    );
+function _easy_authcache_set_cookie($prefix, $rule, $account, $delete = FALSE) {
+  $name = $prefix . session_name();
+  if (!$delete) {
+    switch ($rule) {
+      case EASY_AUTHCACHE_PLUGIN_VARNISH_CACHE_NONE:
+      case EASY_AUTHCACHE_PLUGIN_VARNISH_CACHE_ALL:
+        $hash = NULL;
+        break;
+      case EASY_AUTHCACHE_PLUGIN_VARNISH_CACHE_ROLEBASED:
+        $hash = _easy_authcache_plugin_varnish_get_roles_hash(array_keys($account->roles));
+        break;
+      case EASY_AUTHCACHE_PLUGIN_VARNISH_CACHE_USERBASED:
+        $hash = _easy_authcache_plugin_varnish_get_roles_hash(array($account->uid));
+        break;
+    }
+    if ($hash) {
+      $session_options = session_get_cookie_params();
+      $life_time = $session_options['lifetime'];
+      setcookie($name, $hash, time() + $life_time, '/');
+    }
   }
   else {
-    $cookie += array(
-      'value' => 'deleted',
-      'expire' => 1,
-    );
+    setcookie($name, 'deleted', 1, '/');
   }
-  setcookie($cookie['name'], $cookie['value'], $cookie['expire'], '/');
+
 }
 
 /**
@@ -109,6 +130,7 @@ function easy_authcache_plugin_varnish_user($op, &$edit, &$account, $category = 
  */
 function _easy_authcache_plugin_varnish_get_roles_hash($rids) {
   $seed = _easy_authcache_plugin_varnish_get_seed_key();
+  sort($rids);
   $hash = implode(':', $rids);
   $hash = md5($seed . md5($hash));
   return $hash;
@@ -147,5 +169,52 @@ function _easy_authcache_plugin_varnish_get_random_seed() {
   return $seed;
 }
 
+// Varnish UI
 
+/**
+ * Implementation hook_easy_authcache_config()
+ * @return array
+ */
+function easy_authcache_plugin_varnish_easy_authcache_config() {
+  $items = array();
 
+  $cache_options = array(
+    EASY_AUTHCACHE_PLUGIN_VARNISH_CACHE_NONE => t('No cache'),
+    EASY_AUTHCACHE_PLUGIN_VARNISH_CACHE_ALL => t('Cache for all users'),
+    EASY_AUTHCACHE_PLUGIN_VARNISH_CACHE_ROLEBASED => t('Cache for roles'),
+    EASY_AUTHCACHE_PLUGIN_VARNISH_CACHE_USERBASED => t('Cache for user'),
+  );
+
+  $items['varnish'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Varnish configuration'),
+    '#description' => t('Varnish configuration'),
+    '#collapsible' => TRUE,
+  );
+
+  $items['varnish']['easy_authcache_plugin_varnish_page_rule'] = array(
+    '#type' => 'radios',
+    '#title' => t('Page cache rule'),
+    '#description' => t('Rule to split cache for page'),
+    '#default_value' => _easy_authcache_plugin_varnish_page_cache_rule(),
+    '#options' => $cache_options,
+  );
+
+  $items['varnish']['easy_authcache_plugin_varnish_esi_rule'] = array(
+    '#type' => 'radios',
+    '#title' => t('ESI cache rule'),
+    '#description' => t('Rule to split cache for esi regions'),
+    '#default_value' => _easy_authcache_plugin_varnish_esi_cache_rule(),
+    '#options' => $cache_options,
+  );
+
+  return $items;
+}
+
+function _easy_authcache_plugin_varnish_esi_cache_rule() {
+  return variable_get('easy_authcache_plugin_varnish_esi_rule', EASY_AUTHCACHE_PLUGIN_VARNISH_CACHE_ROLEBASED);
+}
+
+function _easy_authcache_plugin_varnish_page_cache_rule() {
+  return variable_get('easy_authcache_plugin_varnish_page_rule', EASY_AUTHCACHE_PLUGIN_VARNISH_CACHE_ROLEBASED);
+}

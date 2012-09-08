@@ -1,0 +1,26 @@
+<?php
+define('EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_VERSION_2_1', '2.1');
+define('EASY_AUTHCACHE_VCL_GENERATOR_VARNISH_VERSION_3_X', '3.x');
+
+
+/**
+ * Implementation of hook_menu()
+ */
+function easy_authcache_vcl_generator_menu() {
+  $items = array();
+
+  $items['admin/settings/performance/vcl'] = array(
+    'title' => 'Generate VCL',
+    'description' => "Generate VCL.",
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('easy_authcache_vcl_generator_form'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'easy_authcache_vcl.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 30,
+  );
+
+  return $items;
+}
+
+

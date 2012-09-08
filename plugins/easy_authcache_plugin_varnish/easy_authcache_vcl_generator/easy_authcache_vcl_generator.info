@@ -1,0 +1,7 @@
+; $Id$
+name = Easy authcache vcl generation
+description = Allow to generate vcl for easy authcache varnish plugin
+dependencies[] = easy_authcache_plugin_varnish
+
+core = 6.x
+package = Caching
