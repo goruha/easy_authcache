@@ -4,5 +4,3 @@ description = Easy authcache unit tests
 dependencies[] = easy_authcache
 package = Caching
 core = "7.x"
-testing_api = 2.x
-files[] = easy_authcache.test
