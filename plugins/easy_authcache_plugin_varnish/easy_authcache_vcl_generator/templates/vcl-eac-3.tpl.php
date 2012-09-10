@@ -57,14 +57,17 @@ sub eac_backend_server_error {
 
 
 sub eac_hash {
-	set req.http.EAC-ROLE-SESSION-ID = regsub( req.http.Cookie, "^.*?<?php print $eac_prefix; ?>SESS(.{32})=([^;]*);*.*$", "\1\2" );
-	hash_data(req.http.EAC-ROLE-SESSION-ID);
+  if (req.http.Cookie ~ "<?php print $eac_prefix; ?>") {
+    set req.http.EAC-ROLE-SESSION-ID = regsub( req.http.Cookie, "^.*?<?php print $eac_prefix; ?>SESS(.{32})=([^;]*);*.*$", "\1\2" );
+    hash_data(req.http.EAC-ROLE-SESSION-ID);
+  }
 
-	set req.http.EAC-ESI-SESSION-ID = regsub( req.http.Cookie, "^.*?<?php print $esi_prefix; ?>SESS(.{32})=([^;]*);*.*$", "\1\2" );
-	if (req.url ~ "^/<?php print $esi_path; ?>/") {
-		hash_data(req.http.EAC-ESI-SESSION-ID);
-	}
-
+  if (req.http.Cookie ~ "<?php print $esi_prefix; ?>") {
+    set req.http.EAC-ESI-SESSION-ID = regsub( req.http.Cookie, "^.*?<?php print $esi_prefix; ?>SESS(.{32})=([^;]*);*.*$", "\1\2" );
+    if (req.url ~ "^/<?php print $esi_path; ?>/") {
+      hash_data(req.http.EAC-ESI-SESSION-ID);
+    }
+  }
 }
 
 
@@ -164,7 +167,11 @@ sub eac_headers_fetch {
 	if (beresp.ttl <= 0s) {
 		set beresp.http.X-Cacheable = "NO:Not Cacheable";
 	}
-	elsif (req.http.Cookie ~ "(<?php print $cookies_pass; ?>)") {
+<?php if ($esi_cache_rule == EASY_AUTHCACHE_PLUGIN_VARNISH_CACHE_NONE) : ?>
+  elsif (req.http.Cookie ~ "(<?php print $cookies_pass; ?>)") {
+<?php else: ?>
+  elsif (req.http.Cookie ~ "(<?php print $cookies_pass; ?>)" && !req.url ~ "^/<?php print $esi_path; ?>/") {
+<?php endif; ?>
 		set beresp.http.X-Cacheable = "NO:Got Session";
 		return(hit_for_pass);
 	}
