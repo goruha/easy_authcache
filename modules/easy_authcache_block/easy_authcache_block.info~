@@ -3,5 +3,5 @@ name = Easy authcache block
 description = Implement Easy authcache api to get blocks with ajax
 dependencies[] = easy_authcache
 dependencies[] = block
-core = 7.x
+core = 6.x
 package = Caching

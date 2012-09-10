@@ -25,15 +25,16 @@ class EasyAuthcacheTestCase extends DrupalWebTestCase {
   }
 
   public function RebuildThemeRegistry($theme) {
-    drupal_rebuild_theme_registry();
+    drupal_theme_rebuild();
 
     $themes = list_themes();
     $ancestor = $theme;
+    $base_theme = array();
     while ($ancestor && isset($themes[$ancestor]->base_theme)) {
       $base_theme[] = $new_base_theme = $themes[$themes[$ancestor]->base_theme];
       $ancestor = $themes[$ancestor]->base_theme;
     }
-    _init_theme($themes[$theme], array_reverse($base_theme));
+    _drupal_theme_initialize($themes[$theme], array_reverse($base_theme));
   }
 
   public function testOverrideThemeApi() {
@@ -86,7 +87,7 @@ class EasyAuthcacheTestCase extends DrupalWebTestCase {
     _easy_authcache_override_theme($theme_registry, $dynamic_theme['theme'], $dynamic_theme['mock callback'], $dynamic_theme['callback']);
     theme_get_registry($theme_registry);
 
-    $arg = rand(0, 1000);
+    $arg = array('arg1' => rand(0, 1000));
 
     easy_authcache_test_plugin_process_on();
     $output = theme($theme_name, $arg);
@@ -96,7 +97,7 @@ class EasyAuthcacheTestCase extends DrupalWebTestCase {
     easy_authcache_test_plugin_process_off();
     $output = theme($theme_name, $arg);
     $this->verbose(var_export($output, TRUE));
-    $this->assertEqual($arg, $output);
+    $this->assertEqual($arg['arg1'], $output);
   }
 
   public function testProcessThemeFunctionApi() {
@@ -113,7 +114,7 @@ class EasyAuthcacheTestCase extends DrupalWebTestCase {
     _easy_authcache_override_theme($theme_registry, $dynamic_theme['theme'], $dynamic_theme['mock callback'], $dynamic_theme['callback']);
     theme_get_registry($theme_registry);
 
-    $arg = rand(0, 1000);
+    $arg = array('arg1' => rand(0, 1000));
 
     easy_authcache_test_plugin_process_on();
     $output = theme($theme_name, $arg);
@@ -123,6 +124,6 @@ class EasyAuthcacheTestCase extends DrupalWebTestCase {
     easy_authcache_test_plugin_process_off();
     $output = theme($theme_name, $arg);
     $this->verbose(var_export($output, TRUE));
-    $this->assertEqual($arg, $output);
+    $this->assertEqual($arg['arg1'], $output);
   }
 }

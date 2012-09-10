@@ -17,7 +17,7 @@ function easy_authcache_test_theme() {
 
 
 function theme_easy_authcache_test_theme_function($arg1) {
-  return $arg1;
+  return $arg1['arg1'];
 }
 
 

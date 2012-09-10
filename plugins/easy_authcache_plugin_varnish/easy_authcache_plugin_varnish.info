@@ -3,5 +3,5 @@ name = Easy authcache plugin Varnish
 description = Implement varnish ESI for dynamic regions
 dependencies[] = easy_authcache
 dependencies[] = varnish
-core = 6.x
+core = 7.x
 package = Caching

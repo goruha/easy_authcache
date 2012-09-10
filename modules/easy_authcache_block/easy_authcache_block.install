@@ -74,12 +74,12 @@ function easy_authcache_block_schema() {
  * Implementation hook_install()
  */
 function easy_authcache_block_install() {
-  drupal_install_schema('easy_authcache_block');
+  //
 }
 
 /**
  * Implementation hook_uninstall()
  */
 function easy_authcache_block_uninstall() {
-  drupal_uninstall_schema('easy_authcache_block');
+  //
 }
